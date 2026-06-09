@@ -1,4 +1,3 @@
-
 """
 Sailormen 363 Sale — Bid Optimization Engine
 Streamlit + OR-Tools · Case 26-10451-RAM · GuideBoat Advisors
@@ -350,8 +349,21 @@ with tab_opt:
                 bkp=sum(b["amount"]*b.get("breakupPct",2.5)/100+len(b["storeIds"])*CASE["expReimbPerStore"] for b in disp_sh)
                 win_stores=[s for b in winners for s in b["storeIds"]]
                 tot_cure=cure(win_stores); net_sh=gross-bkp; net_cure=net_sh-tot_cure
-                orig_winners=[b for b in included if b["id"] in win_pids]
-                st.session_state.result=dict(winners=orig_winners,gross=gross,ms=ms,sh_floor=sh_floor,
+                # Build display bids: for per-store expanded wins, reconstruct
+                # a bid showing only the stores that actually won per buyer
+                display_winners = []
+                seen_pids = {}
+                for w in winners:
+                    pid = w.get("_pid", w["id"])
+                    if pid not in seen_pids:
+                        # Find the original bid for metadata
+                        orig = next((b for b in included if b["id"]==pid), w)
+                        seen_pids[pid] = {**orig, "storeIds": list(w["storeIds"]), "amount": w["amount"]}
+                    else:
+                        seen_pids[pid]["storeIds"] += w["storeIds"]
+                        seen_pids[pid]["amount"]   += w["amount"]
+                display_winners = list(seen_pids.values())
+                st.session_state.result=dict(winners=display_winners,gross=gross,ms=ms,sh_floor=sh_floor,
                     disp_sh=disp_sh,bkp=bkp,win_stores=win_stores,tot_cure=tot_cure,
                     net_sh=net_sh,net_cure=net_cure,win_pids=win_pids)
             st.rerun()
