@@ -1,3 +1,4 @@
+
 """
 Sailormen 363 Sale — Bid Optimization Engine
 Streamlit + OR-Tools · Case 26-10451-RAM · GuideBoat Advisors
@@ -119,93 +120,109 @@ def optimize(bids):
 def bid_form(edit_bid=None):
     is_edit = edit_bid is not None
     iv = edit_bid or {}
-    title = f"✏️ Edit — {iv.get('buyer','')}" if is_edit else "➕ Add New Bid"
+    lbl = f"\u270f\ufe0f Editing \u2014 {iv.get('buyer','')}" if is_edit else "\u2795 Add New Bid"
+    st.markdown(f"**{lbl}**")
 
-    with st.form("bid_form", clear_on_submit=not is_edit):
-        st.markdown(f"**{title}**")
-        c1,c2,c3 = st.columns([3,1.5,1.5])
-        with c1: buyer   = st.text_input("Buyer name", value=iv.get("buyer",""))
-        with c2: amount  = st.number_input("Amount ($M)", value=iv.get("amount",0)/1e6, min_value=0.0, step=0.5, format="%.1f")
-        with c3: opt_mode= st.selectbox("Optimize as", ["bundle","perStore"], index=["bundle","perStore"].index(iv.get("optMode","bundle")))
+    c1,c2,c3 = st.columns([3,1.5,1.5])
+    with c1: buyer    = st.text_input("Buyer name", value=iv.get("buyer",""), key="f_buyer")
+    with c2: amount   = st.number_input("Amount ($M)", value=iv.get("amount",0)/1e6, min_value=0.0, step=0.5, format="%.1f", key="f_amt")
+    with c3: opt_mode = st.selectbox("Optimize as", ["bundle","perStore"],
+                            index=["bundle","perStore"].index(iv.get("optMode","bundle")), key="f_mode")
 
-        scope_opts=["Full portfolio","Markets","Individual stores"]
+    scope_opts = ["Full portfolio","Markets","Individual stores"]
+    if not iv.get("storeIds"):
         default_scope = "Full portfolio"
-        if iv.get("storeIds"):
-            if set(iv["storeIds"])==set(ALL_STORES): default_scope="Full portfolio"
-            elif any(STORE_MKT.get(s) for s in iv["storeIds"]): default_scope="Markets"
-        scope_type=st.radio("Scope",scope_opts,index=scope_opts.index(default_scope),horizontal=True)
+    elif set(iv["storeIds"]) == set(ALL_STORES):
+        default_scope = "Full portfolio"
+    else:
+        sids_set = set(iv["storeIds"])
+        whole_mkts = [m for m,ss in MARKET_STORES.items() if set(ss) <= sids_set]
+        leftover   = [s for s in iv["storeIds"] if STORE_MKT.get(s) not in set(whole_mkts)]
+        default_scope = "Individual stores" if leftover else "Markets"
 
-        sel_mkts=[]; sel_stores=[]
-        if scope_type=="Markets":
-            default_mkts=sorted({STORE_MKT.get(s,"") for s in iv.get("storeIds",[]) if STORE_MKT.get(s)}) if is_edit else []
-            sel_mkts=st.multiselect("Select markets",list(MARKET_STORES.keys()),default=default_mkts,
-                format_func=lambda m:f"{m} ({MKT_AGG[m]['count']} stores · {fmt(MKT_AGG[m]['ebitda'])} EBITDA)")
-        elif scope_type=="Individual stores":
-            sel_stores=st.multiselect("Select stores",ALL_STORES,default=iv.get("storeIds",[]) if is_edit else [],
-                format_func=lambda s:f"{s} — {STORE_MKT.get(s,'')} — {fmt(STORE_DATA.get(s,{}).get('e',0))} EBITDA")
+    scope_type = st.radio("Scope", scope_opts,
+                          index=scope_opts.index(default_scope), horizontal=True, key="f_scope")
 
-        # Per-store pricing
-        store_amounts = dict(iv.get("storeAmounts",{}))
-        if opt_mode=="perStore":
-            store_ids_for_pricing = (ALL_STORES if scope_type=="Full portfolio"
-                else [s for m in sel_mkts for s in MARKET_STORES[m]] if scope_type=="Markets"
-                else sel_stores)
-            if store_ids_for_pricing:
-                st.markdown("**Per-store bid amounts ($M)**")
-                ps_cols = st.columns(4)
-                for j, sid in enumerate(store_ids_for_pricing):
-                    with ps_cols[j%4]:
-                        default_amt = float(store_amounts.get(str(sid), store_amounts.get(sid, 0)))
-                        val = st.number_input(f"Store {sid}", value=default_amt, min_value=0.0, step=0.1, format="%.2f", key=f"ps_{sid}")
-                        if val > 0: store_amounts[str(sid)] = val
+    sel_mkts=[]; sel_stores=[]
+    if scope_type == "Markets":
+        default_mkts = sorted({STORE_MKT.get(s,"") for s in iv.get("storeIds",[]) if STORE_MKT.get(s)}) if is_edit else []
+        sel_mkts = st.multiselect("Select markets", list(MARKET_STORES.keys()),
+                        default=default_mkts, key="f_mkts",
+                        format_func=lambda m: f"{m}  \u00b7  {MKT_AGG[m]['count']} stores  \u00b7  {fmt(MKT_AGG[m]['ebitda'])} EBITDA")
+    elif scope_type == "Individual stores":
+        sel_stores = st.multiselect("Select stores", ALL_STORES,
+                        default=iv.get("storeIds",[]) if is_edit else [], key="f_stores",
+                        format_func=lambda s: f"{s} \u2014 {STORE_MKT.get(s,'')} \u2014 {fmt(STORE_DATA.get(s,{}).get('e',0))} EBITDA")
 
-        # Closures
-        closed_stores = list(iv.get("closedStores",[]))
-        with st.expander("🚪 Mark stores for closure (optional)"):
-            st.caption("Acquired but not operated — excluded from EBITDA, included in conflict detection")
-            all_acquired = (ALL_STORES if scope_type=="Full portfolio"
-                else [s for m in sel_mkts for s in MARKET_STORES[m]] if scope_type=="Markets"
-                else sel_stores)
-            if all_acquired:
-                closed_stores = st.multiselect("Close these stores", all_acquired,
-                    default=[s for s in closed_stores if s in all_acquired],
-                    format_func=lambda s:f"{s} — {STORE_MKT.get(s,'')}")
+    if scope_type == "Full portfolio":   acquired = ALL_STORES
+    elif scope_type == "Markets":        acquired = [s for m in sel_mkts for s in MARKET_STORES[m]]
+    else:                                acquired = list(sel_stores)
 
-        fa,fb,fc,fd = st.columns(4)
-        with fa: is_sh      = st.checkbox("Stalking horse", value=iv.get("isSH",False))
-        with fb: bkp_pct    = st.number_input("Breakup fee %", 0.0, 5.0, iv.get("breakupPct",2.5), 0.25) if is_sh else iv.get("breakupPct",2.5)
-        with fc: plk_ok     = st.checkbox("PLK Approval ✓", value=iv.get("plkApproval",False))
-        with fd: include    = st.checkbox("Include in optimization", value=iv.get("include",True))
-        comment = st.text_input("Comment", value=iv.get("comment",""), placeholder="e.g. financing not confirmed")
+    # Per-store pricing via st.data_editor (smooth table, no per-keystroke reruns)
+    store_amounts = dict(iv.get("storeAmounts", {}))
+    ps_total = 0.0
+    if opt_mode == "perStore" and acquired:
+        st.markdown("**Per-store bid amounts ($M)** \u2014 total auto-calculates")
+        ps_rows = [{"Store": sid, "Market": STORE_MKT.get(sid,""),
+                    "EBITDA": STORE_DATA.get(sid,{}).get("e",0),
+                    "Bid ($M)": float(store_amounts.get(str(sid), store_amounts.get(sid, 0.0)))}
+                   for sid in acquired]
+        edited = st.data_editor(pd.DataFrame(ps_rows), use_container_width=True, hide_index=True,
+                    disabled=["Store","Market","EBITDA"],
+                    column_config={"Bid ($M)": st.column_config.NumberColumn(min_value=0.0, step=0.1, format="%.2f")},
+                    key="f_ps")
+        for _, row in edited.iterrows():
+            if row["Bid ($M)"] > 0:
+                store_amounts[str(int(row["Store"]))] = float(row["Bid ($M)"])
+        ps_total = float(edited["Bid ($M)"].sum())
+        if ps_total > 0:
+            delta = abs(ps_total - amount)
+            st.info(f"Per-store total: **{fmt(ps_total*1e6)}**" +
+                    (" \u2705 matches overall bid" if delta < 0.05 else f" \u2014 will override overall bid"))
 
-        btn_label = "Save changes" if is_edit else "Submit bid"
-        submitted = st.form_submit_button(btn_label, type="primary", use_container_width=True)
+    closed_stores = list(iv.get("closedStores",[]))
+    with st.expander("\U0001f6aa Store closures (optional)"):
+        st.caption("Acquired but closed \u2014 excluded from EBITDA, included in conflict detection")
+        if acquired:
+            closed_stores = st.multiselect("Mark stores for closure", acquired,
+                default=[s for s in closed_stores if s in acquired], key="f_closed",
+                format_func=lambda s: f"{s} \u2014 {STORE_MKT.get(s,'')}")
 
-        if submitted and buyer and amount>0:
-            if scope_type=="Full portfolio":   store_ids=ALL_STORES
-            elif scope_type=="Markets":        store_ids=[s for m in sel_mkts for s in MARKET_STORES[m]]
-            else:                              store_ids=sel_stores
-            if store_ids:
-                new_bid = {
-                    "id": iv.get("id", str(uuid.uuid4())[:8]),
-                    "buyer": buyer.strip(), "amount": amount*1e6,
-                    "storeIds": store_ids, "closedStores": closed_stores,
-                    "isSH": is_sh, "breakupPct": bkp_pct if is_sh else 2.5,
-                    "include": include, "plkApproval": plk_ok,
-                    "comment": comment, "optMode": opt_mode,
-                    "storeAmounts": store_amounts,
-                }
+    fa,fb,fc,fd = st.columns(4)
+    with fa: is_sh   = st.checkbox("Stalking horse", value=iv.get("isSH",False), key="f_sh")
+    with fb: bkp_pct = st.number_input("Breakup %", 0.0, 5.0, iv.get("breakupPct",2.5), 0.25, key="f_bkp") if is_sh else iv.get("breakupPct",2.5)
+    with fc: plk_ok  = st.checkbox("PLK Approval", value=iv.get("plkApproval",False), key="f_plk")
+    with fd: include = st.checkbox("Include in opt", value=iv.get("include",True), key="f_inc")
+    comment = st.text_input("Comment", value=iv.get("comment",""),
+                            placeholder="e.g. financing not confirmed", key="f_comment")
+
+    final_amount = ps_total if (opt_mode == "perStore" and ps_total > 0) else amount
+
+    cols = st.columns([3,1]) if is_edit else [st.container()]
+    with cols[0]:
+        if st.button("Save changes" if is_edit else "Submit bid",
+                     type="primary", use_container_width=True, key="f_submit"):
+            if buyer and final_amount > 0 and acquired:
+                nb = {"id": iv.get("id", str(uuid.uuid4())[:8]),
+                      "buyer": buyer.strip(), "amount": final_amount*1e6,
+                      "storeIds": list(acquired), "closedStores": closed_stores,
+                      "isSH": is_sh, "breakupPct": bkp_pct if is_sh else 2.5,
+                      "include": include, "plkApproval": plk_ok,
+                      "comment": comment, "optMode": opt_mode, "storeAmounts": store_amounts}
                 if is_edit:
-                    idx=next((i for i,b in enumerate(st.session_state.bids) if b["id"]==iv["id"]),None)
-                    if idx is not None: st.session_state.bids[idx]=new_bid
-                    st.session_state.edit_bid_id=None
+                    idx = next((i for i,b in enumerate(st.session_state.bids) if b["id"]==iv["id"]), None)
+                    if idx is not None: st.session_state.bids[idx] = nb
+                    st.session_state.edit_bid_id = None
                 else:
-                    st.session_state.bids.append(new_bid)
-                st.session_state.result=None
-                st.rerun()
-        if is_edit:
-            if st.form_submit_button("Cancel", use_container_width=True):
-                st.session_state.edit_bid_id=None; st.rerun()
+                    st.session_state.bids.append(nb)
+                st.session_state.result = None; st.rerun()
+            else:
+                st.warning("Enter buyer name and amount (or per-store prices).")
+    if is_edit and len(cols) > 1:
+        with cols[1]:
+            if st.button("Cancel", use_container_width=True, key="f_cancel"):
+                st.session_state.edit_bid_id = None; st.rerun()
+
 
 # ── Header ─────────────────────────────────────────────────────────────────────
 h1,h2=st.columns([4,1])
@@ -218,7 +235,6 @@ with h2:
         st.session_state.result=None; st.session_state.edit_bid_id=None; st.rerun()
 st.divider()
 
-# ── Tabs ───────────────────────────────────────────────────────────────────────
 tab_bids,tab_matrix,tab_opt,tab_ref=st.tabs(["📋 Bids","🗺️ Buyers Matrix","⚡ Optimization","📊 Reference"])
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -227,7 +243,6 @@ tab_bids,tab_matrix,tab_opt,tab_ref=st.tabs(["📋 Bids","🗺️ Buyers Matrix"
 with tab_bids:
     bids=st.session_state.bids; result=st.session_state.result
     edit_id=st.session_state.edit_bid_id
-
     if edit_id:
         edit_bid=next((b for b in bids if b["id"]==edit_id),None)
         if edit_bid: bid_form(edit_bid)
@@ -235,45 +250,37 @@ with tab_bids:
     else:
         with st.expander("➕ Add New Bid", expanded=len(bids)==0):
             bid_form()
-
     if not bids:
-        st.info("No bids yet — add one above.")
+        st.info("No bids yet.")
     else:
         m1,m2,m3,m4=st.columns(4)
-        m1.metric("Total bids",len(bids))
-        m2.metric("Stalking horse",sum(1 for b in bids if b.get("isSH")))
+        m1.metric("Total bids",len(bids)); m2.metric("Stalking horse",sum(1 for b in bids if b.get("isSH")))
         m3.metric("Included",sum(1 for b in bids if b.get("include",True)))
         m4.metric("Gross all-in",fmt(sum(b["amount"] for b in bids)))
-        st.caption("⚠️ Gross assumes zero conflicts — run optimizer for actual proceeds")
+        st.caption("⚠️ Gross assumes no conflicts — run optimizer for actual proceeds")
         st.markdown("---")
-
         win_ids={b["id"] for b in result.get("winners",[])} if result else set()
-
         for i,bid in enumerate(bids):
             f=fin(bid["storeIds"]); ev=bid["amount"]/f["e"] if f["e"]>0 else None
-            pct_sales=bid["amount"]/f["s"]*100 if f["s"]>0 else None
+            pct=bid["amount"]/f["s"]*100 if f["s"]>0 else None
             ovl=conflicts(bid,bids)
-            closed=bid.get("closedStores",[])
-
             tags=[]
-            if bid.get("isSH"):           tags.append("⚓ SH")
-            if bid.get("plkApproval"):    tags.append("✅ PLK")
-            if not bid.get("include",True): tags.append("🙈 excl")
-            if closed:                    tags.append(f"🚪 closes {len(closed)}")
-            if ovl:                       tags.append(f"⚠️ {ovl} conflicts")
-            if result:
-                tags.append("✅ Selected" if bid["id"] in win_ids else "❌ Excluded")
-
+            if bid.get("isSH"):            tags.append("⚓ SH")
+            if bid.get("plkApproval"):     tags.append("✅ PLK")
+            if not bid.get("include",True):tags.append("🙈 excl")
+            if bid.get("closedStores"):    tags.append(f"🚪 closes {len(bid['closedStores'])}")
+            if ovl:                        tags.append(f"⚠️ {ovl} conflicts")
+            if result:                     tags.append("✅ Selected" if bid["id"] in win_ids else "❌ Excluded")
             c1,c2,c3,c4,c5,c6,c7,c8,c9=st.columns([3,1.5,1,1,0.7,0.7,0.7,0.7,0.7])
             with c1:
-                st.markdown(f"**{bid['buyer']}**  " + "  ".join(f"`{t}`" for t in tags))
+                st.markdown(f"**{bid['buyer']}**  "+"  ".join(f"`{t}`" for t in tags))
                 st.caption(scope(bid))
             with c2:
                 st.markdown(f"**{fmt(bid['amount'])}**")
                 st.caption(f"{ev:.1f}x EV/EBITDA" if ev else "neg EBITDA")
             with c3:
                 st.caption(f"{len(bid['storeIds'])} stores")
-                if pct_sales: st.caption(f"{pct_sales:.1f}% of sales")
+                if pct: st.caption(f"{pct:.1f}% of sales")
             with c4:
                 if bid.get("isSH"):
                     new_pct=st.number_input("Breakup %",0.0,5.0,bid.get("breakupPct",2.5),0.25,key=f"bkp_{i}",label_visibility="collapsed")
@@ -283,12 +290,10 @@ with tab_bids:
                 if st.button("⚓",key=f"sh_{i}",help="Toggle SH"):
                     st.session_state.bids[i]["isSH"]=not bid.get("isSH"); st.rerun()
             with c6:
-                plk_icon="✅" if bid.get("plkApproval") else "🏪"
-                if st.button(plk_icon,key=f"plk_{i}",help="Toggle PLK approval"):
+                if st.button("✅" if bid.get("plkApproval") else "🏪",key=f"plk_{i}",help="Toggle PLK"):
                     st.session_state.bids[i]["plkApproval"]=not bid.get("plkApproval"); st.rerun()
             with c7:
-                inc_icon="👁️" if bid.get("include",True) else "🙈"
-                if st.button(inc_icon,key=f"inc_{i}",help="Toggle include"):
+                if st.button("👁️" if bid.get("include",True) else "🙈",key=f"inc_{i}",help="Toggle include"):
                     st.session_state.bids[i]["include"]=not bid.get("include",True); st.rerun()
             with c8:
                 if st.button("✏️",key=f"edit_{i}",help="Edit bid"):
@@ -296,10 +301,7 @@ with tab_bids:
             with c9:
                 if st.button("🗑️",key=f"del_{i}",help="Delete"):
                     st.session_state.bids.pop(i); st.session_state.result=None; st.rerun()
-
-            # Comment display
-            if bid.get("comment"):
-                st.caption(f"  💬 {bid['comment']}")
+            if bid.get("comment"): st.caption(f"  💬 {bid['comment']}")
             st.divider()
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -308,7 +310,6 @@ with tab_bids:
 with tab_matrix:
     bids=st.session_state.bids; result=st.session_state.result
     win_ids={b["id"] for b in result.get("winners",[])} if result else set()
-
     if not bids:
         st.info("No bids to display.")
     else:
@@ -322,9 +323,7 @@ with tab_matrix:
                 row[MKT_ABBR[m]]="✅" if cov==tot else (f"⚡{cov}/{tot}" if cov else "—")
             if bid.get("comment"): row["Comment"]=bid["comment"]
             rows.append(row)
-        df=pd.DataFrame(rows)
-        st.dataframe(df,use_container_width=True,hide_index=True)
-
+        st.dataframe(pd.DataFrame(rows),use_container_width=True,hide_index=True)
         st.markdown("---")
         st.markdown("#### Market financials")
         mkt_rows=[{"Market":m,"Stores":MKT_AGG[m]["count"],"Net Sales":fmt(MKT_AGG[m]["sales"]),"EBITDA":fmt(MKT_AGG[m]["ebitda"]),"Margin":f"{MKT_AGG[m]['ebitda']/MKT_AGG[m]['sales']*100:.1f}%","5x":fmt(MKT_AGG[m]["ebitda"]*5),"6x":fmt(MKT_AGG[m]["ebitda"]*6),"7x":fmt(MKT_AGG[m]["ebitda"]*7)} for m in MARKET_STORES]
@@ -336,7 +335,6 @@ with tab_matrix:
 with tab_opt:
     bids=st.session_state.bids
     included=[b for b in bids if b.get("include",True)]
-
     if not included:
         st.warning("No bids included.")
     else:
@@ -351,15 +349,12 @@ with tab_opt:
                 disp_sh=[b for b in sh_exp if b.get("_pid",b["id"]) in sh_win_pids and b.get("_pid",b["id"]) not in win_pids]
                 bkp=sum(b["amount"]*b.get("breakupPct",2.5)/100+len(b["storeIds"])*CASE["expReimbPerStore"] for b in disp_sh)
                 win_stores=[s for b in winners for s in b["storeIds"]]
-                tot_cure=cure(win_stores)
-                net_sh=gross-bkp; net_cure=net_sh-tot_cure
-                # Map expanded winners back to original bids
+                tot_cure=cure(win_stores); net_sh=gross-bkp; net_cure=net_sh-tot_cure
                 orig_winners=[b for b in included if b["id"] in win_pids]
                 st.session_state.result=dict(winners=orig_winners,gross=gross,ms=ms,sh_floor=sh_floor,
                     disp_sh=disp_sh,bkp=bkp,win_stores=win_stores,tot_cure=tot_cure,
                     net_sh=net_sh,net_cure=net_cure,win_pids=win_pids)
             st.rerun()
-
     result=st.session_state.result
     if result:
         winners=result["winners"]; gross=result["gross"]
@@ -367,31 +362,24 @@ with tab_opt:
         tot_cure=result["tot_cure"]; bkp=result["bkp"]
         disp_sh=result["disp_sh"]; win_stores=result["win_stores"]
         sh_floor=result["sh_floor"]; ms=result["ms"]
-
         k1,k2,k3,k4,k5=st.columns(5)
-        k1.metric("Gross proceeds",fmt(gross))
-        k2.metric("SH protections",fmt(-bkp) if bkp else "—")
-        k3.metric("Net after SH",fmt(net_sh))
-        k4.metric("Cure costs",fmt(-tot_cure))
+        k1.metric("Gross proceeds",fmt(gross)); k2.metric("SH protections",fmt(-bkp) if bkp else "—")
+        k3.metric("Net after SH",fmt(net_sh)); k4.metric("Cure costs",fmt(-tot_cure))
         k5.metric("Net after cure",fmt(net_cure))
         st.caption(f"✅ OR-Tools solved in {ms}ms · {len(winners)} winning bids · {len(set(win_stores))}/119 stores · SH floor: {fmt(sh_floor)}")
-
         st.markdown("---")
         col_a,col_w=st.columns([3,2])
-
         with col_a:
             st.markdown("#### Winning allocation")
             for bid in sorted(winners,key=lambda b:-b["amount"]):
                 f=fin(bid["storeIds"]); ev=bid["amount"]/f["e"] if f["e"]>0 else None
                 c=cure(bid["storeIds"])
-                tag="⚓ " if bid.get("isSH") else ""
-                hdr=f"✅ {tag}{bid['buyer']} — {fmt(bid['amount'])} — {scope(bid)}"
+                hdr=f"✅ {'⚓ ' if bid.get('isSH') else ''}{bid['buyer']} — {fmt(bid['amount'])} — {scope(bid)}"
                 if bid.get("comment"): hdr+=f"  💬 {bid['comment']}"
                 with st.expander(hdr):
                     s1,s2,s3,s4=st.columns(4)
                     s1.metric("Bid",fmt(bid["amount"])); s2.metric("EV/EBITDA",f"{ev:.1f}x" if ev else "—")
                     s3.metric("Net sales",fmt(f["s"])); s4.metric("Cure",fmt(c))
-                    # Store drill-down
                     rows=[]
                     for sid in sorted(bid["storeIds"]):
                         sd=STORE_DATA.get(sid,{}); cc=CURE.get(sid,0)
@@ -401,45 +389,39 @@ with tab_opt:
                             "Lease cure":fmt(round(cc*0.355)),"Tax cure":fmt(round(cc*0.369)),
                             "PLK cure":fmt(round(cc*0.275)),"Total cure":fmt(cc)})
                     st.dataframe(pd.DataFrame(rows),use_container_width=True,hide_index=True)
-
             if disp_sh:
                 st.markdown("##### Displaced SH bids")
                 for bid in disp_sh:
                     fee=bid["amount"]*bid.get("breakupPct",2.5)/100+len(bid["storeIds"])*CASE["expReimbPerStore"]
                     st.markdown(f"❌ **{bid['buyer']}** — breakup fee: **{fmt(fee)}**")
                     if bid.get("comment"): st.caption(f"💬 {bid['comment']}")
-
         with col_w:
             st.markdown("#### Proceeds waterfall")
-            lease_cure=sum(CURE.get(s,0)*0.355 for s in win_stores)
-            tax_cure  =sum(CURE.get(s,0)*0.369 for s in win_stores)
-            plk_cure  =sum(CURE.get(s,0)*0.275 for s in win_stores)
-            wf=[
-                ("Gross auction proceeds",gross,False),
+            lease_c=sum(CURE.get(s,0)*0.355 for s in win_stores)
+            tax_c  =sum(CURE.get(s,0)*0.369 for s in win_stores)
+            plk_c  =sum(CURE.get(s,0)*0.275 for s in win_stores)
+            wf=[("Gross auction proceeds",gross,False),
                 (f"SH bid protections ({len(disp_sh)} displaced)",-bkp if bkp else 0,True),
                 ("Net after SH protections",net_sh,False),
-                ("Lease cure costs",-lease_cure,True),
-                ("Tax cure costs",-tax_cure,True),
-                ("PLK cure costs",-plk_cure,True),
+                ("Lease cure costs",-lease_c,True),("Tax cure costs",-tax_c,True),
+                ("PLK cure costs",-plk_c,True),
                 (f"Total cure ({len(set(win_stores))} stores)",-tot_cure,False),
-                ("Net after cure costs",net_cure,False),
-            ]
+                ("Net after cure costs",net_cure,False)]
             for label,val,indent in wf:
                 if val==0 and indent: continue
                 prefix="  └─ " if indent else ""
-                color="color:#a32d2d" if val<0 else ("color:#3b6d11" if val>0 and not indent else "color:#1a1a18")
+                color="color:#a32d2d" if val<0 else ("color:#3b6d11" if not indent and val>0 else "color:#1a1a18")
                 bold="font-weight:700" if not indent else ""
                 st.markdown(f"<div style='display:flex;justify-content:space-between;padding:5px 0;border-bottom:0.5px solid #eee;{bold}'><span>{prefix}{label}</span><span style='{color}'>{fmt(val)}</span></div>",unsafe_allow_html=True)
             st.caption("Cure costs per KIA 05-24-2026")
-
         uncov=[s for s in ALL_STORES if s not in set(win_stores)]
         if uncov:
             st.markdown("---"); st.markdown(f"#### ⚠️ Uncovered stores ({len(uncov)})")
             um={}
             for s in uncov: um.setdefault(STORE_MKT.get(s,"?"),[]).append(s)
-            cols=st.columns(len(um))
-            for col,(m,ss) in zip(cols,um.items()):
-                col.markdown(f"**{m}**"); col.write(", ".join(str(s) for s in ss))
+            cols_u=st.columns(len(um))
+            for col_u,(m,ss) in zip(cols_u,um.items()):
+                col_u.markdown(f"**{m}**"); col_u.write(", ".join(str(s) for s in ss))
 
 # ══════════════════════════════════════════════════════════════════════════════
 # REFERENCE TAB
@@ -451,8 +433,7 @@ with tab_ref:
         for sid in ss:
             sd=STORE_DATA.get(sid,{}); s=sd.get("s",0); e=sd.get("e",0); c=CURE.get(sid,0)
             ref.append({"Store":sid,"Market":m,"Net Sales":s,"EBITDA":e,
-                "Margin":round(e/s*100,1) if s>0 else 0,
-                "5x":e*5,"6x":e*6,"7x":e*7,"Cure":c})
+                "Margin":round(e/s*100,1) if s>0 else 0,"5x":e*5,"6x":e*6,"7x":e*7,"Cure":c})
     st.dataframe(pd.DataFrame(ref),use_container_width=True,hide_index=True,
         column_config={"Net Sales":st.column_config.NumberColumn(format="$%d"),
             "EBITDA":st.column_config.NumberColumn(format="$%d"),
