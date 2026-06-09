@@ -52,7 +52,7 @@ CURE = {1:97558,2:83818,3:100580,4:76508,5:101280,6:115431,7:154791,8:92884,9:13
 MKT_AGG = {m:{"count":len(ss),"sales":sum(STORE_DATA.get(s,{}).get("s",0) for s in ss),"ebitda":sum(STORE_DATA.get(s,{}).get("e",0) for s in ss)} for m,ss in MARKET_STORES.items()}
 
 SAMPLE_BIDS = [
-[
+
     {
         "buyer": "Flynn Restaurant Group",
         "amount": 104.79,
@@ -1646,7 +1646,7 @@ SAMPLE_BIDS = [
             "224": 0.59,
             "225": 0.45,
         },
-    },
+    },]
 
 # ── Session state ──────────────────────────────────────────────────────────────
 if "bids"        not in st.session_state: st.session_state.bids = [dict(b) for b in SAMPLE_BIDS]
