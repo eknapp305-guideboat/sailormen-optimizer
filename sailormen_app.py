@@ -363,7 +363,7 @@ with tab_bids:
         hh = st.columns([6.5, 3.2])
         with hh[0]:
             st.markdown("""
-            <div style='display:flex;align-items:center;padding:4px 0;font-size:0.72rem;
+            <div style='display:flex;align-items:flex-end;padding:0 0 6px 0;margin-top:-8px;font-size:0.72rem;
                         color:#888;font-weight:600;border-bottom:1px solid #ddd;text-transform:uppercase;letter-spacing:0.03em'>
                 <div style='width:24px'></div>
                 <div style='flex:2.8'>Buyer</div>
@@ -375,7 +375,7 @@ with tab_bids:
             """, unsafe_allow_html=True)
         with hh[1]:
             st.markdown("""
-            <div style='padding:4px 0;font-size:0.72rem;color:#888;font-weight:600;
+            <div style='padding:0 0 6px 0;margin-top:-8px;font-size:0.72rem;color:#888;font-weight:600;
                         border-bottom:1px solid #ddd;text-transform:uppercase;letter-spacing:0.03em;text-align:center'>
                 Actions
             </div>
