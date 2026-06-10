@@ -14,7 +14,7 @@ st.markdown("""
 <style>
 .main .block-container{padding-top:0.8rem;max-width:1500px}
 .stTabs [data-baseweb="tab"]{padding:8px 20px;border-radius:6px;font-size:0.85rem}
-.stButton button{padding:2px 4px;font-size:0.8rem;min-height:34px;white-space:nowrap}
+.stButton button{padding:2px 2px;font-size:0.78rem;min-height:32px;white-space:nowrap}
 div[data-testid="column"]{display:flex;align-items:center;gap:0.25rem}
 [data-testid="stVerticalBlock"]{gap:0.35rem}
 /* Active toggle = filled green */
@@ -360,18 +360,26 @@ with tab_bids:
         st.divider()
 
         # Header row (aligned to data columns below)
-        st.markdown("""
-        <div style='display:flex;align-items:center;padding:4px 0;font-size:0.72rem;
-                    color:#888;font-weight:600;border-bottom:1px solid #ddd;text-transform:uppercase;letter-spacing:0.03em'>
-            <div style='width:32px'></div>
-            <div style='flex:2.6'>Buyer</div>
-            <div style='flex:1.1;text-align:right'>Amount</div>
-            <div style='flex:1.6;padding-left:24px'>Scope</div>
-            <div style='flex:0.7;text-align:center'>Stores</div>
-            <div style='flex:0.9'>Mode</div>
-            <div style='flex:3.0;text-align:center'>Actions</div>
-        </div>
-        """, unsafe_allow_html=True)
+        hh = st.columns([6.5, 3.2])
+        with hh[0]:
+            st.markdown("""
+            <div style='display:flex;align-items:center;padding:4px 0;font-size:0.72rem;
+                        color:#888;font-weight:600;border-bottom:1px solid #ddd;text-transform:uppercase;letter-spacing:0.03em'>
+                <div style='width:24px'></div>
+                <div style='flex:2.8'>Buyer</div>
+                <div style='flex:1.1;text-align:right'>Amount</div>
+                <div style='flex:1.7;padding-left:20px'>Scope</div>
+                <div style='flex:0.7;text-align:center'>Stores</div>
+                <div style='flex:0.9'>Mode</div>
+            </div>
+            """, unsafe_allow_html=True)
+        with hh[1]:
+            st.markdown("""
+            <div style='padding:4px 0;font-size:0.72rem;color:#888;font-weight:600;
+                        border-bottom:1px solid #ddd;text-transform:uppercase;letter-spacing:0.03em;text-align:center'>
+                Actions
+            </div>
+            """, unsafe_allow_html=True)
 
         for i, bid in enumerate(bids):
             f   = fin(bid.get("storeIds",[]))
@@ -394,27 +402,26 @@ with tab_bids:
 
             comment_html = f"<div style='font-size:0.72rem;color:#999;padding-left:32px;margin-top:2px'>{bid['comment']}</div>" if bid.get("comment") else ""
 
-            # The display row + an actions column via Streamlit
-            disp_col, act_col = st.columns([5.9, 3.0])
+            # Display row (HTML) + tight action cluster
+            disp_col, exp_col, act_col = st.columns([6.0, 0.5, 3.2])
             with disp_col:
                 st.markdown(f"""
-                <div style='display:flex;align-items:center;padding:8px 0 2px 0'>
-                    <div style='width:32px;color:#bbb;font-size:0.8rem'>{'▾' if (is_detailed or is_editing) else '▸'}</div>
-                    <div style='flex:2.6;font-weight:600;font-size:0.92rem'>{bid.get('buyer','')} &nbsp;<span style='font-weight:400'>{chip_html}</span></div>
+                <div style='display:flex;align-items:center;padding:7px 0 2px 0'>
+                    <div style='width:24px;color:#bbb;font-size:0.75rem'>{'▾' if (is_detailed or is_editing) else '▸'}</div>
+                    <div style='flex:2.8;font-weight:600;font-size:0.92rem'>{bid.get('buyer','')} &nbsp;<span style='font-weight:400'>{chip_html}</span></div>
                     <div style='flex:1.1;text-align:right;font-variant-numeric:tabular-nums;font-size:0.92rem'>{fmt(bid.get('amount',0))}</div>
-                    <div style='flex:1.6;padding-left:24px;color:#666;font-size:0.85rem'>{scope(bid)}</div>
+                    <div style='flex:1.7;padding-left:20px;color:#666;font-size:0.85rem'>{scope(bid)}</div>
                     <div style='flex:0.7;text-align:center;color:#666;font-size:0.85rem'>{len(bid.get('storeIds',[]))}</div>
                     <div style='flex:0.9;color:#666;font-size:0.85rem'>{bid.get('optMode','bundle')}</div>
                 </div>
                 {comment_html}
                 """, unsafe_allow_html=True)
-            with act_col:
-                a = st.columns([0.8,1,1,2.5])
-                # Expand
-                if a[0].button("⋯", key=f"exp_{i}", help="Show full breakdown", use_container_width=True):
+            with exp_col:
+                if st.button("⋯", key=f"exp_{i}", help="Show full breakdown", use_container_width=True):
                     st.session_state[detail_key] = not is_detailed
                     st.rerun()
-                a2 = a[3].columns(6)
+            with act_col:
+                a2 = st.columns(6)
                 if a2[0].button("SH", key=f"sh_{i}", help="Toggle stalking horse", use_container_width=True,
                                 type="primary" if bid.get("isSH") else "secondary"):
                     st.session_state.bids[i]["isSH"] = not bid.get("isSH"); st.rerun()
