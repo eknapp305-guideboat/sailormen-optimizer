@@ -14,10 +14,18 @@ st.markdown("""
 <style>
 .main .block-container{padding-top:0.8rem;max-width:1500px}
 .stTabs [data-baseweb="tab"]{padding:8px 20px;border-radius:6px;font-size:0.85rem}
-/* Active toggle = filled green */
-.stButton button[kind="primary"]{background:#3b6d11;border-color:#3b6d11;color:#fff}
-.stButton button[kind="primary"]:hover{background:#2f5a0d;border-color:#2f5a0d}
+/* Professional banking style — sharp, minimal */
+.stButton button{border-radius:3px !important;font-size:0.78rem}
+.stButton button[kind="primary"]{background:#1F3864 !important;border-color:#1F3864 !important;color:#fff !important;border-radius:3px !important}
+.stButton button[kind="primary"]:hover{background:#152a4a !important}
 div[data-testid="stMarkdownContainer"] p{margin:0}
+div[data-testid="stMarkdownContainer"] strong{font-weight:600}
+/* Tighten tab styling */
+.stTabs [data-baseweb="tab"]{border-radius:2px;font-size:0.82rem}
+/* Metric boxes less rounded */
+div[data-testid="metric-container"]{background:#f8f8f8;border-radius:3px;border:0.5px solid #e0e0e0}
+/* Popover — compact, sharp */
+div[data-testid="stPopover"] button{border-radius:3px !important}
 div[data-testid="metric-container"]{background:#f5f4f0;border-radius:8px;padding:10px}
 .inline-edit{background:#e6f1fb;border:0.5px solid #378add;border-radius:8px;padding:12px;margin:4px 0 8px 0}
 </style>
@@ -354,10 +362,10 @@ with tab_bids:
         m4.metric("Gross (no conflicts)", fmt(sum(b.get("amount",0) for b in bids)))
         st.divider()
 
-        # Pure Streamlit columns — no HTML mixing, guaranteed alignment
-        header = st.columns([2.8, 1.0, 1.5, 0.6, 0.8, 0.6])
-        for col, label in zip(header, ["Buyer","Amount","Scope","Stores","Mode","Actions"]):
-            col.markdown(f"<p style='font-size:0.7rem;color:#888;font-weight:600;text-transform:uppercase;margin:0;padding-bottom:4px;border-bottom:1.5px solid #ccc'>{label}</p>", unsafe_allow_html=True)
+        # Header row matching data column ratios
+        header = st.columns([0.3, 2.6, 1.0, 1.5, 0.6, 0.8, 0.5])
+        for col, label in zip(header, ["", "Buyer", "Amount", "Scope", "Stores", "Mode", "Actions"]):
+            col.markdown(f"<p style='font-size:0.68rem;color:#888;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;margin:0;padding-bottom:5px;border-bottom:1.5px solid #1F3864'>{label}</p>", unsafe_allow_html=True)
 
         for i, bid in enumerate(bids):
             f_data = fin(bid.get("storeIds",[]))
@@ -376,39 +384,43 @@ with tab_bids:
             if result:                      flags.append("WIN" if bid.get("id") in win_ids else "")
             flag_str = "  ".join(f for f in flags if f)
 
-            # Single row — all native Streamlit widgets, same column layout as header
-            row = st.columns([2.8, 1.0, 1.5, 0.6, 0.8, 0.6])
+            row = st.columns([0.3, 2.6, 1.0, 1.5, 0.6, 0.8, 0.5])
 
+            # Expand arrow — separate standalone button
             with row[0]:
+                arrow = "▾" if (is_detailed or is_editing) else "▸"
+                if st.button(arrow, key=f"exp_{i}", use_container_width=True,
+                             help="Show/hide breakdown"):
+                    st.session_state[detail_key] = not is_detailed
+                    st.session_state.edit_id = None
+                    st.rerun()
+
+            with row[1]:
                 buyer_display = f"**{bid.get('buyer','')}**"
                 if flag_str: buyer_display += f"  :gray[{flag_str}]"
                 st.markdown(buyer_display)
                 if bid.get("comment"):
                     st.caption(bid["comment"])
 
-            with row[1]:
+            with row[2]:
                 st.markdown(fmt(bid.get("amount",0)))
 
-            with row[2]:
-                st.markdown(f":gray[{scope(bid)}]")
-
             with row[3]:
-                st.markdown(str(len(bid.get("storeIds",[]))))
+                st.caption(scope(bid))
 
             with row[4]:
-                st.markdown(f":gray[{bid.get('optMode','bundle')}]")
+                st.caption(str(len(bid.get("storeIds",[]))))
 
             with row[5]:
+                st.caption(bid.get("optMode","bundle"))
+
+            # Actions popover
+            with row[6]:
                 with st.popover("···", use_container_width=True):
                     st.markdown(f"**{bid.get('buyer','')}**")
+                    st.divider()
 
-                    c1, c2 = st.columns(2)
-                    if c1.button("Show detail" if not is_detailed else "Hide detail",
-                                 key=f"exp_{i}", use_container_width=True):
-                        st.session_state[detail_key] = not is_detailed
-                        st.session_state.edit_id = None
-                        st.rerun()
-                    if c2.button("Edit" if not is_editing else "Close edit",
+                    if st.button("✏️ Edit bid" if not is_editing else "✏️ Close editor",
                                  key=f"edit_{i}", use_container_width=True,
                                  type="primary" if is_editing else "secondary"):
                         st.session_state.edit_id = None if is_editing else bid.get("id")
@@ -417,11 +429,11 @@ with tab_bids:
 
                     st.divider()
                     t1, t2, t3 = st.columns(3)
-                    if t1.button("SH" + (" ON" if bid.get("isSH") else " OFF"),
+                    if t1.button("SH " + ("ON" if bid.get("isSH") else "OFF"),
                                  key=f"sh_{i}", use_container_width=True,
                                  type="primary" if bid.get("isSH") else "secondary"):
                         st.session_state.bids[i]["isSH"] = not bid.get("isSH"); st.rerun()
-                    if t2.button("PLK" + (" ON" if bid.get("plkApproval") else " OFF"),
+                    if t2.button("PLK " + ("ON" if bid.get("plkApproval") else "OFF"),
                                  key=f"plk_{i}", use_container_width=True,
                                  type="primary" if bid.get("plkApproval") else "secondary"):
                         st.session_state.bids[i]["plkApproval"] = not bid.get("plkApproval"); st.rerun()
