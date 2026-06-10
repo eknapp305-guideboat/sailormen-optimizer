@@ -14,9 +14,15 @@ st.markdown("""
 <style>
 .main .block-container{padding-top:0.8rem;max-width:1500px}
 .stTabs [data-baseweb="tab"]{padding:8px 20px;border-radius:6px;font-size:0.85rem}
-.stButton button{padding:2px 4px;font-size:0.8rem;min-height:32px}
-div[data-testid="column"]{gap:0.2rem}
-[data-testid="stVerticalBlock"]{gap:0.3rem}
+.stButton button{padding:2px 4px;font-size:0.8rem;min-height:34px;white-space:nowrap}
+div[data-testid="column"]{display:flex;align-items:center;gap:0.25rem}
+[data-testid="stVerticalBlock"]{gap:0.35rem}
+/* Active toggle = filled green */
+.stButton button[kind="primary"]{background:#3b6d11;border-color:#3b6d11;color:#fff}
+.stButton button[kind="primary"]:hover{background:#2f5a0d;border-color:#2f5a0d}
+/* Vertically center text in bid rows */
+div[data-testid="stHorizontalBlock"]{align-items:center}
+div[data-testid="stMarkdownContainer"] p{margin-bottom:0}
 div[data-testid="metric-container"]{background:#f5f4f0;border-radius:8px;padding:10px}
 .inline-edit{background:#e6f1fb;border:0.5px solid #378add;border-radius:8px;padding:12px;margin:4px 0 8px 0}
 </style>
@@ -393,13 +399,23 @@ with tab_bids:
                 st.caption(bid.get("optMode","bundle"))
             with row[6]:
                 a = st.columns(6)
-                if a[0].button("SH", key=f"sh_{i}", help="Toggle stalking horse", use_container_width=True):
+                # type="primary" gives an ON visual state for active toggles
+                if a[0].button("SH", key=f"sh_{i}", help="Toggle stalking horse",
+                               use_container_width=True,
+                               type="primary" if bid.get("isSH") else "secondary"):
                     st.session_state.bids[i]["isSH"] = not bid.get("isSH"); st.rerun()
-                if a[1].button("PLK", key=f"plk_{i}", help="Toggle PLK approval", use_container_width=True):
+                if a[1].button("PLK", key=f"plk_{i}", help="Toggle PLK approval",
+                               use_container_width=True,
+                               type="primary" if bid.get("plkApproval") else "secondary"):
                     st.session_state.bids[i]["plkApproval"] = not bid.get("plkApproval"); st.rerun()
-                if a[2].button("👁", key=f"inc_{i}", help="Toggle include in optimization", use_container_width=True):
-                    st.session_state.bids[i]["include"] = not bid.get("include",True); st.rerun()
-                if a[3].button("✎", key=f"edit_{i}", help="Edit bid", use_container_width=True):
+                included = bid.get("include", True)
+                if a[2].button("👁" if included else "🚫", key=f"inc_{i}",
+                               help="Excluded — click to include" if not included else "Included — click to exclude",
+                               use_container_width=True,
+                               type="secondary" if included else "primary"):
+                    st.session_state.bids[i]["include"] = not included; st.rerun()
+                if a[3].button("✎", key=f"edit_{i}", help="Edit bid", use_container_width=True,
+                               type="primary" if is_editing else "secondary"):
                     st.session_state.edit_id = None if is_editing else bid.get("id")
                     st.session_state[detail_key] = False
                     st.rerun()
