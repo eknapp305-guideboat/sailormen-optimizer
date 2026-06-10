@@ -364,89 +364,112 @@ with tab_bids:
         m4.metric("Gross (no conflicts)", fmt(sum(b.get("amount",0) for b in bids)))
         st.divider()
 
-        # Header row (aligned to data columns below)
-        hh = st.columns([6.5, 3.2])
-        with hh[0]:
-            st.markdown("""
-            <div style='display:flex;align-items:flex-end;padding:0 0 6px 0;margin-top:-8px;font-size:0.72rem;
-                        color:#888;font-weight:600;border-bottom:1px solid #ddd;text-transform:uppercase;letter-spacing:0.03em'>
-                <div style='width:24px'></div>
-                <div style='flex:2.8'>Buyer</div>
-                <div style='flex:1.1;text-align:right'>Amount</div>
-                <div style='flex:1.7;padding-left:20px'>Scope</div>
-                <div style='flex:0.7;text-align:center'>Stores</div>
-                <div style='flex:0.9'>Mode</div>
-            </div>
-            """, unsafe_allow_html=True)
-        with hh[1]:
-            st.markdown("""
-            <div style='padding:0 0 6px 0;margin-top:-8px;font-size:0.72rem;color:#888;font-weight:600;
-                        border-bottom:1px solid #ddd;text-transform:uppercase;letter-spacing:0.03em;text-align:center'>
-                Actions
-            </div>
-            """, unsafe_allow_html=True)
+        # Header — single HTML row, clean column labels
+        st.markdown("""
+        <div style='display:grid;grid-template-columns:2fr 0.8fr 1.2fr 0.5fr 0.7fr 0.5fr;
+                    gap:0 12px;padding:4px 8px 6px 8px;font-size:0.7rem;color:#888;
+                    font-weight:600;text-transform:uppercase;letter-spacing:0.04em;
+                    border-bottom:1.5px solid #1F3864;margin-bottom:4px'>
+            <div>Buyer</div>
+            <div style='text-align:right'>Amount</div>
+            <div>Scope</div>
+            <div style='text-align:center'>Stores</div>
+            <div>Mode</div>
+            <div style='text-align:center'>Actions</div>
+        </div>
+        """, unsafe_allow_html=True)
 
         for i, bid in enumerate(bids):
-            f   = fin(bid.get("storeIds",[]))
-            ev  = bid["amount"]/f["e"] if f["e"]>0 else None
-            ovl = conflicts(bid, bids)
+            f_data = fin(bid.get("storeIds",[]))
+            ev     = bid["amount"]/f_data["e"] if f_data["e"]>0 else None
+            ovl    = conflicts(bid, bids)
             is_editing  = st.session_state.edit_id == bid.get("id")
             detail_key  = f"detail_{bid.get('id')}"
             is_detailed = st.session_state.get(detail_key, False)
 
-            # Build flag chips
+            # Status chips
             chips = []
-            if bid.get("isSH"):             chips.append("<span style='background:#faeeda;color:#854f0b;padding:1px 6px;border-radius:4px;font-size:0.7rem'>SH</span>")
-            if bid.get("plkApproval"):      chips.append("<span style='background:#eaf3de;color:#3b6d11;padding:1px 6px;border-radius:4px;font-size:0.7rem'>PLK</span>")
-            if not bid.get("include",True): chips.append("<span style='background:#fcebeb;color:#a32d2d;padding:1px 6px;border-radius:4px;font-size:0.7rem'>EXCL</span>")
-            if ovl:                         chips.append(f"<span style='background:#f5f4f0;color:#888;padding:1px 6px;border-radius:4px;font-size:0.7rem'>{ovl} conf</span>")
+            if bid.get("isSH"):             chips.append("<span style='background:#faeeda;color:#854f0b;padding:1px 5px;border-radius:3px;font-size:0.68rem;font-weight:600'>SH</span>")
+            if bid.get("plkApproval"):      chips.append("<span style='background:#eaf3de;color:#3b6d11;padding:1px 5px;border-radius:3px;font-size:0.68rem;font-weight:600'>PLK</span>")
+            if not bid.get("include",True): chips.append("<span style='background:#fcebeb;color:#a32d2d;padding:1px 5px;border-radius:3px;font-size:0.68rem;font-weight:600'>EXCL</span>")
+            if ovl:                         chips.append(f"<span style='background:#f0f0f0;color:#666;padding:1px 5px;border-radius:3px;font-size:0.68rem'>{ovl}⚡</span>")
             if result:
                 won = bid.get("id") in win_ids
-                chips.append(f"<span style='background:{'#eaf3de' if won else '#f5f4f0'};color:{'#3b6d11' if won else '#888'};padding:1px 6px;border-radius:4px;font-size:0.7rem'>{'WIN' if won else 'lose'}</span>")
-            chip_html = " ".join(chips)
+                chips.append(f"<span style='background:{'#eaf3de' if won else '#f5f4f0'};color:{'#3b6d11' if won else '#999'};padding:1px 5px;border-radius:3px;font-size:0.68rem;font-weight:600'>{'WIN' if won else '—'}</span>")
+            chip_str = " ".join(chips)
 
-            # Display row (HTML) + tight action cluster — comment rendered separately below
-            disp_col, exp_col, act_col = st.columns([6.0, 0.5, 3.2])
-            with disp_col:
+            comment_html = f"<div style='font-size:0.7rem;color:#aaa;padding:0 8px 4px 8px;margin-top:-2px'>{bid.get('comment','')}</div>" if bid.get("comment") else ""
+
+            # Row: HTML grid for data + single popover for all actions
+            row_bg = "#fafef7" if bid.get("isSH") else "transparent"
+            data_col, act_col = st.columns([9.2, 0.8])
+
+            with data_col:
+                arrow = "▾" if (is_detailed or is_editing) else "▸"
                 st.markdown(f"""
-                <div style='display:flex;align-items:center;min-height:34px'>
-                    <div style='width:24px;color:#bbb;font-size:0.75rem'>{'▾' if (is_detailed or is_editing) else '▸'}</div>
-                    <div style='flex:2.8;font-weight:600;font-size:0.92rem'>{bid.get('buyer','')} &nbsp;<span style='font-weight:400'>{chip_html}</span></div>
-                    <div style='flex:1.1;text-align:right;font-variant-numeric:tabular-nums;font-size:0.92rem'>{fmt(bid.get('amount',0))}</div>
-                    <div style='flex:1.7;padding-left:20px;color:#666;font-size:0.85rem'>{scope(bid)}</div>
-                    <div style='flex:0.7;text-align:center;color:#666;font-size:0.85rem'>{len(bid.get('storeIds',[]))}</div>
-                    <div style='flex:0.9;color:#666;font-size:0.85rem'>{bid.get('optMode','bundle')}</div>
+                <div style='display:grid;grid-template-columns:2fr 0.8fr 1.2fr 0.5fr 0.7fr;
+                            gap:0 12px;padding:6px 8px;background:{row_bg};align-items:center;
+                            font-size:0.88rem;cursor:default'>
+                    <div><span style='color:#bbb;margin-right:4px;font-size:0.7rem'>{arrow}</span>
+                         <strong>{bid.get('buyer','')}</strong> {chip_str}</div>
+                    <div style='text-align:right;font-variant-numeric:tabular-nums'>{fmt(bid.get('amount',0))}</div>
+                    <div style='color:#555'>{scope(bid)}</div>
+                    <div style='text-align:center;color:#666'>{len(bid.get('storeIds',[]))}</div>
+                    <div style='color:#666'>{bid.get('optMode','bundle')}</div>
                 </div>
+                {comment_html}
                 """, unsafe_allow_html=True)
-            with exp_col:
-                if st.button("⋯", key=f"exp_{i}", help="Show full breakdown", use_container_width=True):
-                    st.session_state[detail_key] = not is_detailed
-                    st.rerun()
+
             with act_col:
-                a2 = st.columns(6)
-                if a2[0].button("SH", key=f"sh_{i}", help="Toggle stalking horse", use_container_width=True,
-                                type="primary" if bid.get("isSH") else "secondary"):
-                    st.session_state.bids[i]["isSH"] = not bid.get("isSH"); st.rerun()
-                if a2[1].button("PLK", key=f"plk_{i}", help="Toggle PLK approval", use_container_width=True,
-                                type="primary" if bid.get("plkApproval") else "secondary"):
-                    st.session_state.bids[i]["plkApproval"] = not bid.get("plkApproval"); st.rerun()
-                inc = bid.get("include",True)
-                if a2[2].button("👁" if inc else "🚫", key=f"inc_{i}", use_container_width=True,
-                                help="Click to exclude" if inc else "Click to include",
-                                type="secondary" if inc else "primary"):
-                    st.session_state.bids[i]["include"] = not inc; st.rerun()
-                if a2[3].button("✎", key=f"edit_{i}", help="Edit bid", use_container_width=True,
-                                type="primary" if is_editing else "secondary"):
-                    st.session_state.edit_id = None if is_editing else bid.get("id")
-                    st.session_state[detail_key] = False
-                    st.rerun()
-                if a2[4].button("⧉", key=f"copy_{i}", help="Copy bid", use_container_width=True):
-                    nb = dict(bid); nb["id"] = str(uuid.uuid4())[:8]; nb["buyer"] += " (copy)"
-                    st.session_state.bids.append(nb); st.rerun()
-                if a2[5].button("✕", key=f"del_{i}", help="Delete bid", use_container_width=True):
-                    st.session_state.bids.pop(i); st.session_state.result = None
-                    if st.session_state.edit_id == bid.get("id"): st.session_state.edit_id = None
-                    st.rerun()
+                with st.popover("···", use_container_width=True):
+                    st.markdown(f"**{bid.get('buyer','')}**")
+                    st.divider()
+
+                    # Expand / collapse detail
+                    if st.button("📋 Show breakdown" if not is_detailed else "📋 Hide breakdown",
+                                 key=f"exp_{i}", use_container_width=True):
+                        st.session_state[detail_key] = not is_detailed
+                        st.session_state.edit_id = None
+                        st.rerun()
+
+                    # Edit
+                    if st.button("✏️ Edit bid" if not is_editing else "✏️ Close editor",
+                                 key=f"edit_{i}", use_container_width=True,
+                                 type="primary" if is_editing else "secondary"):
+                        st.session_state.edit_id = None if is_editing else bid.get("id")
+                        st.session_state[detail_key] = False
+                        st.rerun()
+
+                    st.divider()
+
+                    # Toggle buttons
+                    c1, c2, c3 = st.columns(3)
+                    if c1.button("SH " + ("ON" if bid.get("isSH") else "OFF"),
+                                 key=f"sh_{i}", use_container_width=True,
+                                 type="primary" if bid.get("isSH") else "secondary"):
+                        st.session_state.bids[i]["isSH"] = not bid.get("isSH"); st.rerun()
+                    if c2.button("PLK " + ("ON" if bid.get("plkApproval") else "OFF"),
+                                 key=f"plk_{i}", use_container_width=True,
+                                 type="primary" if bid.get("plkApproval") else "secondary"):
+                        st.session_state.bids[i]["plkApproval"] = not bid.get("plkApproval"); st.rerun()
+                    inc = bid.get("include", True)
+                    if c3.button("INCL" if inc else "EXCL",
+                                 key=f"inc_{i}", use_container_width=True,
+                                 type="secondary" if inc else "primary"):
+                        st.session_state.bids[i]["include"] = not inc; st.rerun()
+
+                    st.divider()
+
+                    # Copy / Delete
+                    cc, cd = st.columns(2)
+                    if cc.button("Copy bid", key=f"copy_{i}", use_container_width=True):
+                        nb = dict(bid); nb["id"] = str(uuid.uuid4())[:8]; nb["buyer"] += " (copy)"
+                        st.session_state.bids.append(nb); st.rerun()
+                    if cd.button("Delete", key=f"del_{i}", use_container_width=True, type="primary"):
+                        st.session_state.bids.pop(i); st.session_state.result = None
+                        if st.session_state.edit_id == bid.get("id"): st.session_state.edit_id = None
+                        st.rerun()
+
 
             # Comment line (full width, below the row — keeps row heights uniform)
             if bid.get("comment"):
