@@ -14,10 +14,13 @@ st.markdown("""
 <style>
 .main .block-container{padding-top:0.8rem;max-width:1500px}
 .stTabs [data-baseweb="tab"]{padding:8px 20px;border-radius:6px;font-size:0.85rem}
-.stButton button{padding:1px 2px;font-size:0.76rem;height:34px;min-height:34px;white-space:nowrap;line-height:1}
-/* Align columns to TOP so buttons line up with the fixed 34px row */
-div[data-testid="column"]{display:flex;flex-direction:column;justify-content:flex-start}
-div[data-testid="stHorizontalBlock"]{align-items:flex-start;margin-bottom:0}
+.stButton button{padding:1px 2px;font-size:0.76rem;height:30px;min-height:30px;white-space:nowrap;line-height:1}
+/* Force every horizontal row to vertically center its columns */
+div[data-testid="stHorizontalBlock"]{align-items:center !important;margin-bottom:0}
+div[data-testid="stHorizontalBlock"] > div[data-testid="column"]{
+    display:flex !important;align-items:center !important;justify-content:center;
+    min-height:34px;
+}
 [data-testid="stVerticalBlock"]{gap:0.4rem}
 /* Active toggle = filled green */
 .stButton button[kind="primary"]{background:#3b6d11;border-color:#3b6d11;color:#fff}
@@ -406,7 +409,7 @@ with tab_bids:
             disp_col, exp_col, act_col = st.columns([6.0, 0.5, 3.2])
             with disp_col:
                 st.markdown(f"""
-                <div style='display:flex;align-items:center;height:34px'>
+                <div style='display:flex;align-items:center;min-height:34px'>
                     <div style='width:24px;color:#bbb;font-size:0.75rem'>{'▾' if (is_detailed or is_editing) else '▸'}</div>
                     <div style='flex:2.8;font-weight:600;font-size:0.92rem'>{bid.get('buyer','')} &nbsp;<span style='font-weight:400'>{chip_html}</span></div>
                     <div style='flex:1.1;text-align:right;font-variant-numeric:tabular-nums;font-size:0.92rem'>{fmt(bid.get('amount',0))}</div>
