@@ -14,6 +14,9 @@ st.markdown("""
 <style>
 .main .block-container{padding-top:0.8rem;max-width:1500px}
 .stTabs [data-baseweb="tab"]{padding:8px 20px;border-radius:6px;font-size:0.85rem}
+.stButton button{padding:2px 4px;font-size:0.8rem;min-height:32px}
+div[data-testid="column"]{gap:0.2rem}
+[data-testid="stVerticalBlock"]{gap:0.3rem}
 div[data-testid="metric-container"]{background:#f5f4f0;border-radius:8px;padding:10px}
 .inline-edit{background:#e6f1fb;border:0.5px solid #378add;border-radius:8px;padding:12px;margin:4px 0 8px 0}
 </style>
@@ -351,7 +354,7 @@ with tab_bids:
         st.divider()
 
         # Column header row
-        hc = st.columns([0.4, 2.6, 1.2, 1.6, 0.8, 1.0, 2.2])
+        hc = st.columns([0.3, 2.4, 1.0, 1.5, 0.6, 0.8, 2.8])
         for col, label in zip(hc, ["", "Buyer", "Amount", "Scope", "Stores", "Mode", "Actions"]):
             col.markdown(f"<span style='font-size:0.75rem;color:#888;font-weight:600'>{label}</span>", unsafe_allow_html=True)
 
@@ -373,7 +376,7 @@ with tab_bids:
             if result:                      flags.append("WIN" if bid.get("id") in win_ids else "lose")
             flag_str = " · ".join(flags)
 
-            row = st.columns([0.4, 2.6, 1.2, 1.6, 0.8, 1.0, 2.2])
+            row = st.columns([0.3, 2.4, 1.0, 1.5, 0.6, 0.8, 2.8])
             with row[0]:
                 if st.button("▸" if not is_detailed else "▾", key=f"exp_{i}", help="Show details"):
                     st.session_state[detail_key] = not is_detailed
@@ -390,20 +393,20 @@ with tab_bids:
                 st.caption(bid.get("optMode","bundle"))
             with row[6]:
                 a = st.columns(6)
-                if a[0].button("SH", key=f"sh_{i}", help="Toggle SH"):
+                if a[0].button("SH", key=f"sh_{i}", help="Toggle stalking horse", use_container_width=True):
                     st.session_state.bids[i]["isSH"] = not bid.get("isSH"); st.rerun()
-                if a[1].button("PLK", key=f"plk_{i}", help="Toggle PLK"):
+                if a[1].button("PLK", key=f"plk_{i}", help="Toggle PLK approval", use_container_width=True):
                     st.session_state.bids[i]["plkApproval"] = not bid.get("plkApproval"); st.rerun()
-                if a[2].button("Hide" if bid.get("include",True) else "Show", key=f"inc_{i}", help="Toggle include"):
+                if a[2].button("👁", key=f"inc_{i}", help="Toggle include in optimization", use_container_width=True):
                     st.session_state.bids[i]["include"] = not bid.get("include",True); st.rerun()
-                if a[3].button("Edit" if not is_editing else "Close", key=f"edit_{i}"):
+                if a[3].button("✎", key=f"edit_{i}", help="Edit bid", use_container_width=True):
                     st.session_state.edit_id = None if is_editing else bid.get("id")
                     st.session_state[detail_key] = False
                     st.rerun()
-                if a[4].button("Copy", key=f"copy_{i}"):
+                if a[4].button("⧉", key=f"copy_{i}", help="Copy bid", use_container_width=True):
                     nb = dict(bid); nb["id"] = str(uuid.uuid4())[:8]; nb["buyer"] += " (copy)"
                     st.session_state.bids.append(nb); st.rerun()
-                if a[5].button("Del", key=f"del_{i}"):
+                if a[5].button("✕", key=f"del_{i}", help="Delete bid", use_container_width=True):
                     st.session_state.bids.pop(i); st.session_state.result = None
                     if st.session_state.edit_id == bid.get("id"): st.session_state.edit_id = None
                     st.rerun()
@@ -450,7 +453,7 @@ with tab_bids:
                     st.session_state.edit_id = None
                     st.rerun()
 
-            st.divider()
+            st.markdown("<hr style='margin:2px 0;border:none;border-top:0.5px solid #eee'>", unsafe_allow_html=True)
 
 
 # ══════════════════════════════════════════════════════════════════════════════
