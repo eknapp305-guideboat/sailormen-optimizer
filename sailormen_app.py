@@ -150,41 +150,11 @@ def optimize(bids):
         return w, sum(b["amount"] for b in w), ms
     return [], 0, ms
 
-# ── Store picker (checkbox-based like HTML tool) ───────────────────────────────
-def store_picker(key_prefix, default_stores=None):
-    """Returns list of selected store IDs using checkbox UI."""
-    default_set = set(default_stores or [])
-    selected = []
-    for mkt, stores in MARKET_STORES.items():
-        mkt_stores_in_default = [s for s in stores if s in default_set]
-        all_checked = len(mkt_stores_in_default) == len(stores)
-        some_checked = len(mkt_stores_in_default) > 0
-
-        col_mkt, col_stores = st.columns([1,4])
-        with col_mkt:
-            mkt_cb = st.checkbox(
-                f"**{MKT_ABBR[mkt]}** ({len(stores)})",
-                value=all_checked,
-                key=f"{key_prefix}_mkt_{mkt}"
-            )
-        with col_stores:
-            with st.expander(f"{mkt} stores", expanded=some_checked and not all_checked):
-                store_cols = st.columns(7)
-                for j, sid in enumerate(stores):
-                    with store_cols[j%7]:
-                        checked = mkt_cb or (sid in default_set)
-                        if st.checkbox(str(sid), value=checked, key=f"{key_prefix}_s_{sid}"):
-                            selected.append(sid)
-        if mkt_cb:
-            selected.extend([s for s in stores if s not in selected])
-
-    return list(dict.fromkeys(selected))  # deduplicate preserving order
-
 # ── Inline bid form ────────────────────────────────────────────────────────────
 def bid_form_inline(key_prefix, iv=None, is_edit=False):
-    """Render bid form, return new_bid dict or None if not submitted."""
     iv = iv or {}
 
+    # ── Row 1: core fields ────────────────────────────────────────────────────
     c1,c2,c3 = st.columns([3,1.5,1.5])
     with c1: buyer    = st.text_input("Buyer name", value=iv.get("buyer",""), key=f"{key_prefix}_buyer")
     with c2: amount   = st.number_input("Amount ($M)", value=iv.get("amount",0)/1e6, min_value=0.0, step=0.5, format="%.1f", key=f"{key_prefix}_amt")
@@ -192,90 +162,111 @@ def bid_form_inline(key_prefix, iv=None, is_edit=False):
                             index=["bundle","perStore"].index(iv.get("optMode","bundle")),
                             key=f"{key_prefix}_mode")
 
-    # Scope selection
-    scope_opts = ["Full portfolio","Markets","Individual stores"]
-    if not iv.get("storeIds"):
-        default_scope = "Full portfolio"
-    elif set(iv["storeIds"]) == set(ALL_STORES):
-        default_scope = "Full portfolio"
-    else:
-        sids_set = set(iv["storeIds"])
-        whole_mkts = [m for m,ss in MARKET_STORES.items() if set(ss) <= sids_set]
-        leftover   = [s for s in iv["storeIds"] if STORE_MKT.get(s) not in set(whole_mkts)]
-        default_scope = "Individual stores" if leftover else "Markets"
+    # ── Row 2: market checkboxes ──────────────────────────────────────────────
+    st.caption("Markets")
+    default_sids = set(iv.get("storeIds", []))
+    all_portfolio = set(iv.get("storeIds",[])) == set(ALL_STORES) or not iv.get("storeIds")
 
-    scope_type = st.radio("Scope", scope_opts,
-                          index=scope_opts.index(default_scope),
-                          horizontal=True, key=f"{key_prefix}_scope")
+    # Full portfolio toggle
+    full_port = st.checkbox("Full portfolio (all 119 stores)",
+                            value=all_portfolio if not is_edit else set(iv.get("storeIds",[])) == set(ALL_STORES),
+                            key=f"{key_prefix}_full")
 
-    # Store selection — checkbox-based
-    if scope_type == "Full portfolio":
+    acquired = []
+    if full_port:
         acquired = ALL_STORES
-        st.caption(f"All 119 stores selected")
-    elif scope_type == "Markets":
-        default_mkts = sorted({STORE_MKT.get(s,"") for s in iv.get("storeIds",[]) if STORE_MKT.get(s)}) if is_edit else []
-        sel_mkts = st.multiselect("Select markets", list(MARKET_STORES.keys()),
-                        default=default_mkts, key=f"{key_prefix}_mkts",
-                        format_func=lambda m: f"{m} · {MKT_AGG[m]['count']} stores · {fmt(MKT_AGG[m]['ebitda'])} EBITDA")
-        acquired = [s for m in sel_mkts for s in MARKET_STORES[m]]
+        cols = st.columns(7)
+        for j,(mkt,ss) in enumerate(MARKET_STORES.items()):
+            cols[j].markdown(f"<span style='font-size:0.72rem;color:#aaa'>✓ {MKT_ABBR[mkt]}<br>{len(ss)} stores</span>", unsafe_allow_html=True)
     else:
-        st.caption("Check stores to include:")
-        acquired = store_picker(key_prefix, iv.get("storeIds",[]) if is_edit else [])
+        # Market checkboxes in a single row
+        mkt_cols = st.columns(7)
+        sel_store_ids = []
+        for j,(mkt,stores) in enumerate(MARKET_STORES.items()):
+            with mkt_cols[j]:
+                mkt_default = all(s in default_sids for s in stores) if default_sids else False
+                mkt_checked = st.checkbox(
+                    f"**{MKT_ABBR[mkt]}** ({len(stores)})",
+                    value=mkt_default,
+                    key=f"{key_prefix}_mkt_{mkt}"
+                )
+                if mkt_checked:
+                    sel_store_ids.extend(stores)
 
-    # Per-store pricing
+        # If any market checked, offer individual store refinement
+        checked_mkts = [m for m,ss in MARKET_STORES.items()
+                        if st.session_state.get(f"{key_prefix}_mkt_{m}", False)]
+        if checked_mkts:
+            with st.expander("Refine individual stores (optional)"):
+                for mkt in checked_mkts:
+                    stores = MARKET_STORES[mkt]
+                    st.caption(f"{mkt}")
+                    scols = st.columns(8)
+                    for k,sid in enumerate(stores):
+                        with scols[k%8]:
+                            in_default = sid in default_sids
+                            if st.checkbox(str(sid), value=True, key=f"{key_prefix}_s_{sid}"):
+                                pass  # handled below
+                # Rebuild acquired from individual checkboxes
+                sel_store_ids = [sid for mkt in checked_mkts
+                                 for sid in MARKET_STORES[mkt]
+                                 if st.session_state.get(f"{key_prefix}_s_{sid}", True)]
+        acquired = list(dict.fromkeys(sel_store_ids))
+
+    if acquired and acquired != ALL_STORES:
+        f_acq = fin(acquired)
+        st.caption(f"{len(acquired)} stores · {fmt(f_acq['s'])} net sales · {fmt(f_acq['e'])} EBITDA")
+
+    # ── Per-store pricing (only if perStore mode) ─────────────────────────────
     store_amounts = dict(iv.get("storeAmounts", {}))
     ps_total = 0.0
     if opt_mode == "perStore" and acquired:
-        st.markdown("**Per-store bid amounts ($M)**")
-        ps_rows = [{"Store": sid, "Market": STORE_MKT.get(sid,""),
-                    "EBITDA": STORE_DATA.get(sid,{}).get("e",0),
-                    "Bid ($M)": float(store_amounts.get(str(sid), store_amounts.get(sid, 0.0)))}
-                   for sid in acquired]
-        edited = st.data_editor(pd.DataFrame(ps_rows), use_container_width=True, hide_index=True,
-                    disabled=["Store","Market","EBITDA"],
-                    column_config={"Bid ($M)": st.column_config.NumberColumn(min_value=0.0, step=0.1, format="%.2f")},
-                    key=f"{key_prefix}_ps")
-        for _, row in edited.iterrows():
-            if row["Bid ($M)"] > 0:
-                store_amounts[str(int(row["Store"]))] = float(row["Bid ($M)"])
-        ps_total = float(edited["Bid ($M)"].sum())
-        if ps_total > 0:
-            st.info(f"Per-store total: **{fmt(ps_total*1e6)}**" +
-                    (" — will override overall bid" if abs(ps_total-amount) > 0.05 else " ✓ matches"))
+        with st.expander("Per-store bid amounts ($M)", expanded=bool(store_amounts)):
+            ps_rows = [{"Store": sid, "Market": STORE_MKT.get(sid,""),
+                        "EBITDA ($)": STORE_DATA.get(sid,{}).get("e",0),
+                        "Bid ($M)": float(store_amounts.get(str(sid), store_amounts.get(sid, 0.0)))}
+                       for sid in acquired]
+            edited = st.data_editor(pd.DataFrame(ps_rows), use_container_width=True, hide_index=True,
+                        disabled=["Store","Market","EBITDA ($)"],
+                        column_config={"Bid ($M)": st.column_config.NumberColumn(min_value=0.0, step=0.1, format="%.2f")},
+                        key=f"{key_prefix}_ps")
+            for _, row in edited.iterrows():
+                if row["Bid ($M)"] > 0:
+                    store_amounts[str(int(row["Store"]))] = float(row["Bid ($M)"])
+            ps_total = float(edited["Bid ($M)"].sum())
+            if ps_total > 0:
+                st.caption(f"Total: {fmt(ps_total*1e6)}" +
+                           (" ✓" if abs(ps_total-amount)<0.05 else " — overrides overall bid amount"))
 
-    # Flags row
-    fa,fb,fc,fd = st.columns(4)
+    # ── Row 3: flags + comment (compact single row) ───────────────────────────
+    fa,fb,fc,fd,fe = st.columns([1,1,1,1,3])
     with fa: is_sh   = st.checkbox("Stalking horse", value=iv.get("isSH",False), key=f"{key_prefix}_sh")
     with fb: bkp_pct = st.number_input("Breakup %", 0.0, 5.0, iv.get("breakupPct",2.5), 0.25, key=f"{key_prefix}_bkp") if is_sh else iv.get("breakupPct",2.5)
     with fc: plk_ok  = st.checkbox("PLK Approval", value=iv.get("plkApproval",False), key=f"{key_prefix}_plk")
-    with fd: include = st.checkbox("Include in opt", value=iv.get("include",True), key=f"{key_prefix}_inc")
-    comment = st.text_input("Comment", value=iv.get("comment",""), placeholder="e.g. financing not confirmed", key=f"{key_prefix}_comment")
+    with fd: include = st.checkbox("Include", value=iv.get("include",True), key=f"{key_prefix}_inc")
+    with fe: comment = st.text_input("Comment", value=iv.get("comment",""), placeholder="Optional note", key=f"{key_prefix}_comment")
 
     final_amount = ps_total if (opt_mode=="perStore" and ps_total>0) else amount
 
-    btn_cols = st.columns([2,1,1]) if is_edit else st.columns([2,2])
-    with btn_cols[0]:
-        submitted = st.button("Save changes" if is_edit else "Submit bid",
-                              type="primary", use_container_width=True, key=f"{key_prefix}_submit")
-    with btn_cols[1]:
-        cancelled = st.button("Cancel", use_container_width=True, key=f"{key_prefix}_cancel")
+    # ── Submit ────────────────────────────────────────────────────────────────
+    b1,b2 = st.columns([2,1])
+    with b1: submitted = st.button("Save changes" if is_edit else "Submit bid",
+                                   type="primary", use_container_width=True, key=f"{key_prefix}_submit")
+    with b2: cancelled = st.button("Cancel", use_container_width=True, key=f"{key_prefix}_cancel")
 
-    if cancelled:
-        return "cancel", None
+    if cancelled: return "cancel", None
 
     if submitted:
         if buyer and final_amount > 0 and acquired:
             nb = {"id": iv.get("id", str(uuid.uuid4())[:8]),
                   "buyer": buyer.strip(), "amount": final_amount*1e6,
-                  "storeIds": list(dict.fromkeys(acquired)),
-                  "closedStores": [],
+                  "storeIds": list(dict.fromkeys(acquired)), "closedStores": [],
                   "isSH": is_sh, "breakupPct": bkp_pct if is_sh else 2.5,
                   "include": include, "plkApproval": plk_ok,
-                  "comment": comment, "optMode": opt_mode,
-                  "storeAmounts": store_amounts}
+                  "comment": comment, "optMode": opt_mode, "storeAmounts": store_amounts}
             return "submit", nb
         else:
-            st.warning("Enter buyer name and amount (or per-store prices).")
+            st.warning("Enter buyer name, amount, and at least one market.")
 
     return None, None
 
