@@ -453,6 +453,44 @@ with tab_bids:
                         if st.session_state.edit_id == bid.get("id"): st.session_state.edit_id = None
                         st.rerun()
 
+
+            # Detail dropdown (read-only full breakdown)
+            if is_detailed and not is_editing:
+                d1,d2,d3,d4,d5 = st.columns(5)
+                d1.metric("Net sales", fmt(f_data["s"]))
+                d2.metric("EBITDA",    fmt(f_data["e"]))
+                d3.metric("EV/EBITDA", f"{ev:.1f}x" if ev else "—")
+                d4.metric("Cure",      fmt(cure(bid.get("storeIds",[]))))
+                d5.metric("Maint capex", fmt(capex_total(bid.get("storeIds",[]))))
+                rows = []
+                for sid in sorted(bid.get("storeIds",[])):
+                    sd = STORE_DATA.get(sid,{}); cc = CURE.get(sid,0)
+                    store_bid = None
+                    if bid.get("optMode")=="perStore" and bid.get("storeAmounts"):
+                        sa = bid["storeAmounts"].get(str(sid)) or bid["storeAmounts"].get(sid)
+                        if sa: store_bid = float(sa)*1e6
+                    rows.append({"Store":sid,"Market":STORE_MKT.get(sid,""),
+                        "Bid":fmt(store_bid) if store_bid else "—",
+                        "Net Sales":fmt(sd.get("s",0)),"EBITDA":fmt(sd.get("e",0)),
+                        "Maint Capex":fmt(RUN_RATE.get(sid,0)),"Reno Capex":fmt(RENO_CAPEX.get(sid,0)),
+                        "Reno Yr":RENO_YEAR.get(sid,0) or "—","Cure":fmt(cc)})
+                st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
+
+            # Edit dropdown (inline form below the row)
+            if is_editing:
+                st.markdown('<div class="inline-edit">', unsafe_allow_html=True)
+                st.markdown(f"**Editing: {bid.get('buyer','')}**")
+                action, updated = bid_form_inline(f"edit_{bid.get('id','')}", iv=bid, is_edit=True)
+                st.markdown('</div>', unsafe_allow_html=True)
+                if action == "submit" and updated:
+                    st.session_state.bids[i] = updated
+                    st.session_state.result  = None
+                    st.session_state.edit_id = None
+                    st.rerun()
+                elif action == "cancel":
+                    st.session_state.edit_id = None
+                    st.rerun()
+
             st.markdown("<hr style='margin:2px 0;border:none;border-top:0.5px solid #eee'>", unsafe_allow_html=True)
 
 
