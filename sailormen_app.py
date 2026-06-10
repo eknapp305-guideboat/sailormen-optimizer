@@ -14,15 +14,17 @@ st.markdown("""
 <style>
 .main .block-container{padding-top:0.8rem;max-width:1500px}
 .stTabs [data-baseweb="tab"]{padding:8px 20px;border-radius:6px;font-size:0.85rem}
-.stButton button{padding:2px 2px;font-size:0.78rem;min-height:32px;white-space:nowrap}
-div[data-testid="column"]{display:flex;align-items:center;gap:0.25rem}
-[data-testid="stVerticalBlock"]{gap:0.35rem}
+.stButton button{padding:1px 2px;font-size:0.76rem;height:28px;min-height:28px;white-space:nowrap;line-height:1}
+/* Center every column's content vertically so buttons align with row text */
+div[data-testid="column"]{display:flex;flex-direction:column;justify-content:center;gap:0.15rem}
+div[data-testid="stHorizontalBlock"]{align-items:center;margin-bottom:0}
+[data-testid="stVerticalBlock"]{gap:0.4rem}
 /* Active toggle = filled green */
 .stButton button[kind="primary"]{background:#3b6d11;border-color:#3b6d11;color:#fff}
 .stButton button[kind="primary"]:hover{background:#2f5a0d;border-color:#2f5a0d}
-/* Vertically center text in bid rows */
-div[data-testid="stHorizontalBlock"]{align-items:center}
 div[data-testid="stMarkdownContainer"] p{margin-bottom:0}
+/* Give the action button row breathing room from dividers */
+.stButton{margin:2px 0}
 div[data-testid="metric-container"]{background:#f5f4f0;border-radius:8px;padding:10px}
 .inline-edit{background:#e6f1fb;border:0.5px solid #378add;border-radius:8px;padding:12px;margin:4px 0 8px 0}
 </style>
