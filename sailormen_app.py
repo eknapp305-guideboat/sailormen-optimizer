@@ -363,9 +363,10 @@ with tab_bids:
         st.divider()
 
         # Header row matching data column ratios
-        header = st.columns([0.3, 2.6, 1.0, 1.5, 0.6, 0.8, 0.5])
-        for col, label in zip(header, ["", "Buyer", "Amount", "Scope", "Stores", "Mode", "Actions"]):
-            col.markdown(f"<p style='font-size:0.68rem;color:#888;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;margin:0;padding-bottom:5px;border-bottom:1.5px solid #1F3864'>{label}</p>", unsafe_allow_html=True)
+        header = st.columns([0.25, 2.5, 0.9, 1.4, 0.5, 0.65, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3])
+        header_labels = ["", "Buyer", "Amount", "Scope", "Stores", "Mode", "Incl", "SH", "PLK", "Edit", "Copy", "Del"]
+        for col, label in zip(header, header_labels):
+            col.markdown(f"<p style='font-size:0.62rem;color:#888;font-weight:600;text-transform:uppercase;letter-spacing:0.04em;margin:0;padding-bottom:4px;border-bottom:1.5px solid #1F3864;text-align:center'>{label}</p>", unsafe_allow_html=True)
 
         for i, bid in enumerate(bids):
             f_data = fin(bid.get("storeIds",[]))
@@ -384,74 +385,58 @@ with tab_bids:
             if result:                      flags.append("WIN" if bid.get("id") in win_ids else "")
             flag_str = "  ".join(f for f in flags if f)
 
-            row = st.columns([0.3, 2.6, 1.0, 1.5, 0.6, 0.8, 0.5])
+            # Row — [▸][Buyer][Amount][Scope][Stores][Mode][👁][⚓][PLK][✏️][⧉][🗑]
+            # Matching the HTML tool button layout: always-visible icon buttons
+            r = st.columns([0.25, 2.5, 0.9, 1.4, 0.5, 0.65, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3])
 
-            # Expand arrow — separate standalone button
-            with row[0]:
+            with r[0]:
                 arrow = "▾" if (is_detailed or is_editing) else "▸"
-                if st.button(arrow, key=f"exp_{i}", use_container_width=True,
-                             help="Show/hide breakdown"):
+                if st.button(arrow, key=f"exp_{i}", use_container_width=True):
                     st.session_state[detail_key] = not is_detailed
                     st.session_state.edit_id = None
                     st.rerun()
-
-            with row[1]:
+            with r[1]:
                 buyer_display = f"**{bid.get('buyer','')}**"
                 if flag_str: buyer_display += f"  :gray[{flag_str}]"
                 st.markdown(buyer_display)
-                if bid.get("comment"):
-                    st.caption(bid["comment"])
-
-            with row[2]:
+                if bid.get("comment"): st.caption(bid["comment"])
+            with r[2]:
                 st.markdown(fmt(bid.get("amount",0)))
-
-            with row[3]:
+            with r[3]:
                 st.caption(scope(bid))
-
-            with row[4]:
+            with r[4]:
                 st.caption(str(len(bid.get("storeIds",[]))))
-
-            with row[5]:
+            with r[5]:
                 st.caption(bid.get("optMode","bundle"))
-
-            # Actions popover
-            with row[6]:
-                with st.popover("···", use_container_width=True):
-                    st.markdown(f"**{bid.get('buyer','')}**")
-                    st.divider()
-
-                    if st.button("✏️ Edit bid" if not is_editing else "✏️ Close editor",
-                                 key=f"edit_{i}", use_container_width=True,
-                                 type="primary" if is_editing else "secondary"):
-                        st.session_state.edit_id = None if is_editing else bid.get("id")
-                        st.session_state[detail_key] = False
-                        st.rerun()
-
-                    st.divider()
-                    t1, t2, t3 = st.columns(3)
-                    if t1.button("SH " + ("ON" if bid.get("isSH") else "OFF"),
-                                 key=f"sh_{i}", use_container_width=True,
-                                 type="primary" if bid.get("isSH") else "secondary"):
-                        st.session_state.bids[i]["isSH"] = not bid.get("isSH"); st.rerun()
-                    if t2.button("PLK " + ("ON" if bid.get("plkApproval") else "OFF"),
-                                 key=f"plk_{i}", use_container_width=True,
-                                 type="primary" if bid.get("plkApproval") else "secondary"):
-                        st.session_state.bids[i]["plkApproval"] = not bid.get("plkApproval"); st.rerun()
-                    inc = bid.get("include", True)
-                    if t3.button("Incl" if inc else "Excl",
-                                 key=f"inc_{i}", use_container_width=True,
-                                 type="secondary" if inc else "primary"):
-                        st.session_state.bids[i]["include"] = not inc; st.rerun()
-
-                    st.divider()
-                    d1, d2 = st.columns(2)
-                    if d1.button("Copy", key=f"copy_{i}", use_container_width=True):
-                        nb = dict(bid); nb["id"] = str(uuid.uuid4())[:8]; nb["buyer"] += " (copy)"
-                        st.session_state.bids.append(nb); st.rerun()
-                    if d2.button("Delete", key=f"del_{i}", use_container_width=True, type="primary"):
-                        st.session_state.bids.pop(i); st.session_state.result = None
-                        if st.session_state.edit_id == bid.get("id"): st.session_state.edit_id = None
-                        st.rerun()
+            with r[6]:
+                inc = bid.get("include", True)
+                # Always show eye — grey styling when excluded
+                if st.button("👁", key=f"inc_{i}", use_container_width=True,
+                             type="secondary" if inc else "primary"):
+                    st.session_state.bids[i]["include"] = not inc; st.rerun()
+            with r[7]:
+                if st.button("SH", key=f"sh_{i}", use_container_width=True,
+                             type="primary" if bid.get("isSH") else "secondary"):
+                    st.session_state.bids[i]["isSH"] = not bid.get("isSH"); st.rerun()
+            with r[8]:
+                if st.button("PLK", key=f"plk_{i}", use_container_width=True,
+                             type="primary" if bid.get("plkApproval") else "secondary"):
+                    st.session_state.bids[i]["plkApproval"] = not bid.get("plkApproval"); st.rerun()
+            with r[9]:
+                if st.button("✏", key=f"edit_{i}", use_container_width=True,
+                             type="primary" if is_editing else "secondary"):
+                    st.session_state.edit_id = None if is_editing else bid.get("id")
+                    st.session_state[detail_key] = False
+                    st.rerun()
+            with r[10]:
+                if st.button("⧉", key=f"copy_{i}", use_container_width=True):
+                    nb = dict(bid); nb["id"] = str(uuid.uuid4())[:8]; nb["buyer"] += " (copy)"
+                    st.session_state.bids.append(nb); st.rerun()
+            with r[11]:
+                if st.button("✕", key=f"del_{i}", use_container_width=True):
+                    st.session_state.bids.pop(i); st.session_state.result = None
+                    if st.session_state.edit_id == bid.get("id"): st.session_state.edit_id = None
+                    st.rerun()
 
 
             # Detail dropdown (read-only full breakdown)
