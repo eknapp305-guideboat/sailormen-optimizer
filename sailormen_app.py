@@ -359,12 +359,20 @@ with tab_bids:
         m4.metric("Gross (no conflicts)", fmt(sum(b.get("amount",0) for b in bids)))
         st.divider()
 
-        # Column header row
-        hc = st.columns([0.3, 2.4, 1.0, 1.5, 0.6, 0.8, 2.8])
-        for col, label in zip(hc, ["", "Buyer", "Amount", "Scope", "Stores", "Mode", "Actions"]):
-            col.markdown(f"<span style='font-size:0.75rem;color:#888;font-weight:600'>{label}</span>", unsafe_allow_html=True)
+        # Header row (aligned to data columns below)
+        st.markdown("""
+        <div style='display:flex;align-items:center;padding:4px 0;font-size:0.72rem;
+                    color:#888;font-weight:600;border-bottom:1px solid #ddd;text-transform:uppercase;letter-spacing:0.03em'>
+            <div style='width:32px'></div>
+            <div style='flex:2.6'>Buyer</div>
+            <div style='flex:1.1;text-align:right'>Amount</div>
+            <div style='flex:1.6;padding-left:24px'>Scope</div>
+            <div style='flex:0.7;text-align:center'>Stores</div>
+            <div style='flex:0.9'>Mode</div>
+            <div style='flex:3.0;text-align:center'>Actions</div>
+        </div>
+        """, unsafe_allow_html=True)
 
-        # Compact single-line bid list with expand/edit dropdowns
         for i, bid in enumerate(bids):
             f   = fin(bid.get("storeIds",[]))
             ev  = bid["amount"]/f["e"] if f["e"]>0 else None
@@ -373,88 +381,87 @@ with tab_bids:
             detail_key  = f"detail_{bid.get('id')}"
             is_detailed = st.session_state.get(detail_key, False)
 
-            # Flag string
-            flags = []
-            if bid.get("isSH"):             flags.append("SH")
-            if bid.get("plkApproval"):      flags.append("PLK✓")
-            if not bid.get("include",True): flags.append("excl")
-            if ovl:                         flags.append(f"{ovl}conf")
-            if result:                      flags.append("WIN" if bid.get("id") in win_ids else "lose")
-            flag_str = " · ".join(flags)
+            # Build flag chips
+            chips = []
+            if bid.get("isSH"):             chips.append("<span style='background:#faeeda;color:#854f0b;padding:1px 6px;border-radius:4px;font-size:0.7rem'>SH</span>")
+            if bid.get("plkApproval"):      chips.append("<span style='background:#eaf3de;color:#3b6d11;padding:1px 6px;border-radius:4px;font-size:0.7rem'>PLK</span>")
+            if not bid.get("include",True): chips.append("<span style='background:#fcebeb;color:#a32d2d;padding:1px 6px;border-radius:4px;font-size:0.7rem'>EXCL</span>")
+            if ovl:                         chips.append(f"<span style='background:#f5f4f0;color:#888;padding:1px 6px;border-radius:4px;font-size:0.7rem'>{ovl} conf</span>")
+            if result:
+                won = bid.get("id") in win_ids
+                chips.append(f"<span style='background:{'#eaf3de' if won else '#f5f4f0'};color:{'#3b6d11' if won else '#888'};padding:1px 6px;border-radius:4px;font-size:0.7rem'>{'WIN' if won else 'lose'}</span>")
+            chip_html = " ".join(chips)
 
-            row = st.columns([0.3, 2.4, 1.0, 1.5, 0.6, 0.8, 2.8])
-            with row[0]:
-                if st.button("▸" if not is_detailed else "▾", key=f"exp_{i}", help="Show details"):
+            comment_html = f"<div style='font-size:0.72rem;color:#999;padding-left:32px;margin-top:2px'>{bid['comment']}</div>" if bid.get("comment") else ""
+
+            # The display row + an actions column via Streamlit
+            disp_col, act_col = st.columns([5.9, 3.0])
+            with disp_col:
+                st.markdown(f"""
+                <div style='display:flex;align-items:center;padding:8px 0 2px 0'>
+                    <div style='width:32px;color:#bbb;font-size:0.8rem'>{'▾' if (is_detailed or is_editing) else '▸'}</div>
+                    <div style='flex:2.6;font-weight:600;font-size:0.92rem'>{bid.get('buyer','')} &nbsp;<span style='font-weight:400'>{chip_html}</span></div>
+                    <div style='flex:1.1;text-align:right;font-variant-numeric:tabular-nums;font-size:0.92rem'>{fmt(bid.get('amount',0))}</div>
+                    <div style='flex:1.6;padding-left:24px;color:#666;font-size:0.85rem'>{scope(bid)}</div>
+                    <div style='flex:0.7;text-align:center;color:#666;font-size:0.85rem'>{len(bid.get('storeIds',[]))}</div>
+                    <div style='flex:0.9;color:#666;font-size:0.85rem'>{bid.get('optMode','bundle')}</div>
+                </div>
+                {comment_html}
+                """, unsafe_allow_html=True)
+            with act_col:
+                a = st.columns([0.8,1,1,2.5])
+                # Expand
+                if a[0].button("⋯", key=f"exp_{i}", help="Show full breakdown", use_container_width=True):
                     st.session_state[detail_key] = not is_detailed
                     st.rerun()
-            with row[1]:
-                st.markdown(f"**{bid.get('buyer','')}**" + (f"  :gray[{flag_str}]" if flag_str else ""))
-            with row[2]:
-                st.markdown(fmt(bid.get("amount",0)))
-            with row[3]:
-                st.caption(scope(bid))
-            with row[4]:
-                st.caption(str(len(bid.get("storeIds",[]))))
-            with row[5]:
-                st.caption(bid.get("optMode","bundle"))
-            with row[6]:
-                a = st.columns(6)
-                # type="primary" gives an ON visual state for active toggles
-                if a[0].button("SH", key=f"sh_{i}", help="Toggle stalking horse",
-                               use_container_width=True,
-                               type="primary" if bid.get("isSH") else "secondary"):
+                a2 = a[3].columns(6)
+                if a2[0].button("SH", key=f"sh_{i}", help="Toggle stalking horse", use_container_width=True,
+                                type="primary" if bid.get("isSH") else "secondary"):
                     st.session_state.bids[i]["isSH"] = not bid.get("isSH"); st.rerun()
-                if a[1].button("PLK", key=f"plk_{i}", help="Toggle PLK approval",
-                               use_container_width=True,
-                               type="primary" if bid.get("plkApproval") else "secondary"):
+                if a2[1].button("PLK", key=f"plk_{i}", help="Toggle PLK approval", use_container_width=True,
+                                type="primary" if bid.get("plkApproval") else "secondary"):
                     st.session_state.bids[i]["plkApproval"] = not bid.get("plkApproval"); st.rerun()
-                included = bid.get("include", True)
-                if a[2].button("👁" if included else "🚫", key=f"inc_{i}",
-                               help="Excluded — click to include" if not included else "Included — click to exclude",
-                               use_container_width=True,
-                               type="secondary" if included else "primary"):
-                    st.session_state.bids[i]["include"] = not included; st.rerun()
-                if a[3].button("✎", key=f"edit_{i}", help="Edit bid", use_container_width=True,
-                               type="primary" if is_editing else "secondary"):
+                inc = bid.get("include",True)
+                if a2[2].button("👁" if inc else "🚫", key=f"inc_{i}", use_container_width=True,
+                                help="Click to exclude" if inc else "Click to include",
+                                type="secondary" if inc else "primary"):
+                    st.session_state.bids[i]["include"] = not inc; st.rerun()
+                if a2[3].button("✎", key=f"edit_{i}", help="Edit bid", use_container_width=True,
+                                type="primary" if is_editing else "secondary"):
                     st.session_state.edit_id = None if is_editing else bid.get("id")
                     st.session_state[detail_key] = False
                     st.rerun()
-                if a[4].button("⧉", key=f"copy_{i}", help="Copy bid", use_container_width=True):
+                if a2[4].button("⧉", key=f"copy_{i}", help="Copy bid", use_container_width=True):
                     nb = dict(bid); nb["id"] = str(uuid.uuid4())[:8]; nb["buyer"] += " (copy)"
                     st.session_state.bids.append(nb); st.rerun()
-                if a[5].button("✕", key=f"del_{i}", help="Delete bid", use_container_width=True):
+                if a2[5].button("✕", key=f"del_{i}", help="Delete bid", use_container_width=True):
                     st.session_state.bids.pop(i); st.session_state.result = None
                     if st.session_state.edit_id == bid.get("id"): st.session_state.edit_id = None
                     st.rerun()
 
-            # Comment line (compact, under the row)
-            if bid.get("comment"):
-                st.caption(f"     💬 {bid['comment']}")
-
-            # ── Detail dropdown (read-only full breakdown) ────────────────────
+            # Detail dropdown (read-only)
             if is_detailed and not is_editing:
-                with st.container():
-                    d1,d2,d3,d4,d5 = st.columns(5)
-                    d1.metric("Net sales", fmt(f["s"]))
-                    d2.metric("EBITDA",    fmt(f["e"]))
-                    d3.metric("EV/EBITDA", f"{ev:.1f}x" if ev else "—")
-                    d4.metric("Cure",      fmt(cure(bid.get("storeIds",[]))))
-                    d5.metric("Maint capex", fmt(capex_total(bid.get("storeIds",[]))))
-                    rows = []
-                    for sid in sorted(bid.get("storeIds",[])):
-                        sd = STORE_DATA.get(sid,{}); cc = CURE.get(sid,0)
-                        store_bid = None
-                        if bid.get("optMode")=="perStore" and bid.get("storeAmounts"):
-                            sa = bid["storeAmounts"].get(str(sid)) or bid["storeAmounts"].get(sid)
-                            if sa: store_bid = float(sa)*1e6
-                        rows.append({"Store":sid,"Market":STORE_MKT.get(sid,""),
-                            "Bid":fmt(store_bid) if store_bid else "—",
-                            "Net Sales":fmt(sd.get("s",0)),"EBITDA":fmt(sd.get("e",0)),
-                            "Maint Capex":fmt(RUN_RATE.get(sid,0)),"Reno Capex":fmt(RENO_CAPEX.get(sid,0)),
-                            "Reno Yr":RENO_YEAR.get(sid,0) or "—","Cure":fmt(cc)})
-                    st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
+                d1,d2,d3,d4,d5 = st.columns(5)
+                d1.metric("Net sales", fmt(f["s"]))
+                d2.metric("EBITDA",    fmt(f["e"]))
+                d3.metric("EV/EBITDA", f"{ev:.1f}x" if ev else "—")
+                d4.metric("Cure",      fmt(cure(bid.get("storeIds",[]))))
+                d5.metric("Maint capex", fmt(capex_total(bid.get("storeIds",[]))))
+                rows = []
+                for sid in sorted(bid.get("storeIds",[])):
+                    sd = STORE_DATA.get(sid,{}); cc = CURE.get(sid,0)
+                    store_bid = None
+                    if bid.get("optMode")=="perStore" and bid.get("storeAmounts"):
+                        sa = bid["storeAmounts"].get(str(sid)) or bid["storeAmounts"].get(sid)
+                        if sa: store_bid = float(sa)*1e6
+                    rows.append({"Store":sid,"Market":STORE_MKT.get(sid,""),
+                        "Bid":fmt(store_bid) if store_bid else "—",
+                        "Net Sales":fmt(sd.get("s",0)),"EBITDA":fmt(sd.get("e",0)),
+                        "Maint Capex":fmt(RUN_RATE.get(sid,0)),"Reno Capex":fmt(RENO_CAPEX.get(sid,0)),
+                        "Reno Yr":RENO_YEAR.get(sid,0) or "—","Cure":fmt(cc)})
+                st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
 
-            # ── Edit dropdown (inline editable form) ──────────────────────────
+            # Edit dropdown
             if is_editing:
                 st.markdown('<div class="inline-edit">', unsafe_allow_html=True)
                 st.markdown(f"**Editing: {bid.get('buyer','')}**")
