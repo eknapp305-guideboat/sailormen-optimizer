@@ -14,20 +14,10 @@ st.markdown("""
 <style>
 .main .block-container{padding-top:0.8rem;max-width:1500px}
 .stTabs [data-baseweb="tab"]{padding:8px 20px;border-radius:6px;font-size:0.85rem}
-.stButton button{padding:1px 2px;font-size:0.76rem;height:30px;min-height:30px;white-space:nowrap;line-height:1}
-/* Force every horizontal row to vertically center its columns */
-div[data-testid="stHorizontalBlock"]{align-items:center !important;margin-bottom:0}
-div[data-testid="stHorizontalBlock"] > div[data-testid="column"]{
-    display:flex !important;align-items:center !important;justify-content:center;
-    min-height:34px;
-}
-[data-testid="stVerticalBlock"]{gap:0.4rem}
 /* Active toggle = filled green */
 .stButton button[kind="primary"]{background:#3b6d11;border-color:#3b6d11;color:#fff}
 .stButton button[kind="primary"]:hover{background:#2f5a0d;border-color:#2f5a0d}
-div[data-testid="stMarkdownContainer"] p{margin-bottom:0}
-/* Give the action button row breathing room from dividers */
-.stButton{margin:2px 0}
+div[data-testid="stMarkdownContainer"] p{margin:0}
 div[data-testid="metric-container"]{background:#f5f4f0;border-radius:8px;padding:10px}
 .inline-edit{background:#e6f1fb;border:0.5px solid #378add;border-radius:8px;padding:12px;margin:4px 0 8px 0}
 </style>
@@ -364,20 +354,10 @@ with tab_bids:
         m4.metric("Gross (no conflicts)", fmt(sum(b.get("amount",0) for b in bids)))
         st.divider()
 
-        # Header — single HTML row, clean column labels
-        st.markdown("""
-        <div style='display:grid;grid-template-columns:2fr 0.8fr 1.2fr 0.5fr 0.7fr 0.5fr;
-                    gap:0 12px;padding:4px 8px 6px 8px;font-size:0.7rem;color:#888;
-                    font-weight:600;text-transform:uppercase;letter-spacing:0.04em;
-                    border-bottom:1.5px solid #1F3864;margin-bottom:4px'>
-            <div>Buyer</div>
-            <div style='text-align:right'>Amount</div>
-            <div>Scope</div>
-            <div style='text-align:center'>Stores</div>
-            <div>Mode</div>
-            <div style='text-align:center'>Actions</div>
-        </div>
-        """, unsafe_allow_html=True)
+        # Pure Streamlit columns — no HTML mixing, guaranteed alignment
+        header = st.columns([2.8, 1.0, 1.5, 0.6, 0.8, 0.6])
+        for col, label in zip(header, ["Buyer","Amount","Scope","Stores","Mode","Actions"]):
+            col.markdown(f"<p style='font-size:0.7rem;color:#888;font-weight:600;text-transform:uppercase;margin:0;padding-bottom:4px;border-bottom:1.5px solid #ccc'>{label}</p>", unsafe_allow_html=True)
 
         for i, bid in enumerate(bids):
             f_data = fin(bid.get("storeIds",[]))
@@ -387,53 +367,48 @@ with tab_bids:
             detail_key  = f"detail_{bid.get('id')}"
             is_detailed = st.session_state.get(detail_key, False)
 
-            # Status chips
-            chips = []
-            if bid.get("isSH"):             chips.append("<span style='background:#faeeda;color:#854f0b;padding:1px 5px;border-radius:3px;font-size:0.68rem;font-weight:600'>SH</span>")
-            if bid.get("plkApproval"):      chips.append("<span style='background:#eaf3de;color:#3b6d11;padding:1px 5px;border-radius:3px;font-size:0.68rem;font-weight:600'>PLK</span>")
-            if not bid.get("include",True): chips.append("<span style='background:#fcebeb;color:#a32d2d;padding:1px 5px;border-radius:3px;font-size:0.68rem;font-weight:600'>EXCL</span>")
-            if ovl:                         chips.append(f"<span style='background:#f0f0f0;color:#666;padding:1px 5px;border-radius:3px;font-size:0.68rem'>{ovl}⚡</span>")
-            if result:
-                won = bid.get("id") in win_ids
-                chips.append(f"<span style='background:{'#eaf3de' if won else '#f5f4f0'};color:{'#3b6d11' if won else '#999'};padding:1px 5px;border-radius:3px;font-size:0.68rem;font-weight:600'>{'WIN' if won else '—'}</span>")
-            chip_str = " ".join(chips)
+            # Build compact flag string
+            flags = []
+            if bid.get("isSH"):             flags.append("⚓SH")
+            if bid.get("plkApproval"):      flags.append("✓PLK")
+            if not bid.get("include",True): flags.append("🚫")
+            if ovl:                         flags.append(f"{ovl}⚡")
+            if result:                      flags.append("WIN" if bid.get("id") in win_ids else "")
+            flag_str = "  ".join(f for f in flags if f)
 
-            comment_html = f"<div style='font-size:0.7rem;color:#aaa;padding:0 8px 4px 8px;margin-top:-2px'>{bid.get('comment','')}</div>" if bid.get("comment") else ""
+            # Single row — all native Streamlit widgets, same column layout as header
+            row = st.columns([2.8, 1.0, 1.5, 0.6, 0.8, 0.6])
 
-            # Row: HTML grid for data + single popover for all actions
-            row_bg = "#fafef7" if bid.get("isSH") else "transparent"
-            data_col, act_col = st.columns([9.2, 0.8])
+            with row[0]:
+                buyer_display = f"**{bid.get('buyer','')}**"
+                if flag_str: buyer_display += f"  :gray[{flag_str}]"
+                st.markdown(buyer_display)
+                if bid.get("comment"):
+                    st.caption(bid["comment"])
 
-            with data_col:
-                arrow = "▾" if (is_detailed or is_editing) else "▸"
-                st.markdown(f"""
-                <div style='display:grid;grid-template-columns:2fr 0.8fr 1.2fr 0.5fr 0.7fr;
-                            gap:0 12px;padding:6px 8px;background:{row_bg};align-items:center;
-                            font-size:0.88rem;cursor:default'>
-                    <div><span style='color:#bbb;margin-right:4px;font-size:0.7rem'>{arrow}</span>
-                         <strong>{bid.get('buyer','')}</strong> {chip_str}</div>
-                    <div style='text-align:right;font-variant-numeric:tabular-nums'>{fmt(bid.get('amount',0))}</div>
-                    <div style='color:#555'>{scope(bid)}</div>
-                    <div style='text-align:center;color:#666'>{len(bid.get('storeIds',[]))}</div>
-                    <div style='color:#666'>{bid.get('optMode','bundle')}</div>
-                </div>
-                {comment_html}
-                """, unsafe_allow_html=True)
+            with row[1]:
+                st.markdown(fmt(bid.get("amount",0)))
 
-            with act_col:
+            with row[2]:
+                st.markdown(f":gray[{scope(bid)}]")
+
+            with row[3]:
+                st.markdown(str(len(bid.get("storeIds",[]))))
+
+            with row[4]:
+                st.markdown(f":gray[{bid.get('optMode','bundle')}]")
+
+            with row[5]:
                 with st.popover("···", use_container_width=True):
                     st.markdown(f"**{bid.get('buyer','')}**")
-                    st.divider()
 
-                    # Expand / collapse detail
-                    if st.button("📋 Show breakdown" if not is_detailed else "📋 Hide breakdown",
+                    c1, c2 = st.columns(2)
+                    if c1.button("Show detail" if not is_detailed else "Hide detail",
                                  key=f"exp_{i}", use_container_width=True):
                         st.session_state[detail_key] = not is_detailed
                         st.session_state.edit_id = None
                         st.rerun()
-
-                    # Edit
-                    if st.button("✏️ Edit bid" if not is_editing else "✏️ Close editor",
+                    if c2.button("Edit" if not is_editing else "Close edit",
                                  key=f"edit_{i}", use_container_width=True,
                                  type="primary" if is_editing else "secondary"):
                         st.session_state.edit_id = None if is_editing else bid.get("id")
@@ -441,76 +416,30 @@ with tab_bids:
                         st.rerun()
 
                     st.divider()
-
-                    # Toggle buttons
-                    c1, c2, c3 = st.columns(3)
-                    if c1.button("SH " + ("ON" if bid.get("isSH") else "OFF"),
+                    t1, t2, t3 = st.columns(3)
+                    if t1.button("SH" + (" ON" if bid.get("isSH") else " OFF"),
                                  key=f"sh_{i}", use_container_width=True,
                                  type="primary" if bid.get("isSH") else "secondary"):
                         st.session_state.bids[i]["isSH"] = not bid.get("isSH"); st.rerun()
-                    if c2.button("PLK " + ("ON" if bid.get("plkApproval") else "OFF"),
+                    if t2.button("PLK" + (" ON" if bid.get("plkApproval") else " OFF"),
                                  key=f"plk_{i}", use_container_width=True,
                                  type="primary" if bid.get("plkApproval") else "secondary"):
                         st.session_state.bids[i]["plkApproval"] = not bid.get("plkApproval"); st.rerun()
                     inc = bid.get("include", True)
-                    if c3.button("INCL" if inc else "EXCL",
+                    if t3.button("Incl" if inc else "Excl",
                                  key=f"inc_{i}", use_container_width=True,
                                  type="secondary" if inc else "primary"):
                         st.session_state.bids[i]["include"] = not inc; st.rerun()
 
                     st.divider()
-
-                    # Copy / Delete
-                    cc, cd = st.columns(2)
-                    if cc.button("Copy bid", key=f"copy_{i}", use_container_width=True):
+                    d1, d2 = st.columns(2)
+                    if d1.button("Copy", key=f"copy_{i}", use_container_width=True):
                         nb = dict(bid); nb["id"] = str(uuid.uuid4())[:8]; nb["buyer"] += " (copy)"
                         st.session_state.bids.append(nb); st.rerun()
-                    if cd.button("Delete", key=f"del_{i}", use_container_width=True, type="primary"):
+                    if d2.button("Delete", key=f"del_{i}", use_container_width=True, type="primary"):
                         st.session_state.bids.pop(i); st.session_state.result = None
                         if st.session_state.edit_id == bid.get("id"): st.session_state.edit_id = None
                         st.rerun()
-
-
-            # Comment line (full width, below the row — keeps row heights uniform)
-            if bid.get("comment"):
-                st.markdown(f"<div style='font-size:0.72rem;color:#999;padding-left:24px;margin:-6px 0 2px 0'>{bid['comment']}</div>", unsafe_allow_html=True)
-
-            # Detail dropdown (read-only)
-            if is_detailed and not is_editing:
-                d1,d2,d3,d4,d5 = st.columns(5)
-                d1.metric("Net sales", fmt(f["s"]))
-                d2.metric("EBITDA",    fmt(f["e"]))
-                d3.metric("EV/EBITDA", f"{ev:.1f}x" if ev else "—")
-                d4.metric("Cure",      fmt(cure(bid.get("storeIds",[]))))
-                d5.metric("Maint capex", fmt(capex_total(bid.get("storeIds",[]))))
-                rows = []
-                for sid in sorted(bid.get("storeIds",[])):
-                    sd = STORE_DATA.get(sid,{}); cc = CURE.get(sid,0)
-                    store_bid = None
-                    if bid.get("optMode")=="perStore" and bid.get("storeAmounts"):
-                        sa = bid["storeAmounts"].get(str(sid)) or bid["storeAmounts"].get(sid)
-                        if sa: store_bid = float(sa)*1e6
-                    rows.append({"Store":sid,"Market":STORE_MKT.get(sid,""),
-                        "Bid":fmt(store_bid) if store_bid else "—",
-                        "Net Sales":fmt(sd.get("s",0)),"EBITDA":fmt(sd.get("e",0)),
-                        "Maint Capex":fmt(RUN_RATE.get(sid,0)),"Reno Capex":fmt(RENO_CAPEX.get(sid,0)),
-                        "Reno Yr":RENO_YEAR.get(sid,0) or "—","Cure":fmt(cc)})
-                st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
-
-            # Edit dropdown
-            if is_editing:
-                st.markdown('<div class="inline-edit">', unsafe_allow_html=True)
-                st.markdown(f"**Editing: {bid.get('buyer','')}**")
-                action, updated = bid_form_inline(f"edit_{bid.get('id','')}", iv=bid, is_edit=True)
-                st.markdown('</div>', unsafe_allow_html=True)
-                if action == "submit" and updated:
-                    st.session_state.bids[i] = updated
-                    st.session_state.result  = None
-                    st.session_state.edit_id = None
-                    st.rerun()
-                elif action == "cancel":
-                    st.session_state.edit_id = None
-                    st.rerun()
 
             st.markdown("<hr style='margin:2px 0;border:none;border-top:0.5px solid #eee'>", unsafe_allow_html=True)
 
