@@ -14,10 +14,10 @@ st.markdown("""
 <style>
 .main .block-container{padding-top:0.8rem;max-width:1500px}
 .stTabs [data-baseweb="tab"]{padding:8px 20px;border-radius:6px;font-size:0.85rem}
-.stButton button{padding:1px 2px;font-size:0.76rem;height:28px;min-height:28px;white-space:nowrap;line-height:1}
-/* Center every column's content vertically so buttons align with row text */
-div[data-testid="column"]{display:flex;flex-direction:column;justify-content:center;gap:0.15rem}
-div[data-testid="stHorizontalBlock"]{align-items:center;margin-bottom:0}
+.stButton button{padding:1px 2px;font-size:0.76rem;height:34px;min-height:34px;white-space:nowrap;line-height:1}
+/* Align columns to TOP so buttons line up with the fixed 34px row */
+div[data-testid="column"]{display:flex;flex-direction:column;justify-content:flex-start}
+div[data-testid="stHorizontalBlock"]{align-items:flex-start;margin-bottom:0}
 [data-testid="stVerticalBlock"]{gap:0.4rem}
 /* Active toggle = filled green */
 .stButton button[kind="primary"]{background:#3b6d11;border-color:#3b6d11;color:#fff}
@@ -402,13 +402,11 @@ with tab_bids:
                 chips.append(f"<span style='background:{'#eaf3de' if won else '#f5f4f0'};color:{'#3b6d11' if won else '#888'};padding:1px 6px;border-radius:4px;font-size:0.7rem'>{'WIN' if won else 'lose'}</span>")
             chip_html = " ".join(chips)
 
-            comment_html = f"<div style='font-size:0.72rem;color:#999;padding-left:32px;margin-top:2px'>{bid['comment']}</div>" if bid.get("comment") else ""
-
-            # Display row (HTML) + tight action cluster
+            # Display row (HTML) + tight action cluster — comment rendered separately below
             disp_col, exp_col, act_col = st.columns([6.0, 0.5, 3.2])
             with disp_col:
                 st.markdown(f"""
-                <div style='display:flex;align-items:center;padding:7px 0 2px 0'>
+                <div style='display:flex;align-items:center;height:34px'>
                     <div style='width:24px;color:#bbb;font-size:0.75rem'>{'▾' if (is_detailed or is_editing) else '▸'}</div>
                     <div style='flex:2.8;font-weight:600;font-size:0.92rem'>{bid.get('buyer','')} &nbsp;<span style='font-weight:400'>{chip_html}</span></div>
                     <div style='flex:1.1;text-align:right;font-variant-numeric:tabular-nums;font-size:0.92rem'>{fmt(bid.get('amount',0))}</div>
@@ -416,7 +414,6 @@ with tab_bids:
                     <div style='flex:0.7;text-align:center;color:#666;font-size:0.85rem'>{len(bid.get('storeIds',[]))}</div>
                     <div style='flex:0.9;color:#666;font-size:0.85rem'>{bid.get('optMode','bundle')}</div>
                 </div>
-                {comment_html}
                 """, unsafe_allow_html=True)
             with exp_col:
                 if st.button("⋯", key=f"exp_{i}", help="Show full breakdown", use_container_width=True):
@@ -447,6 +444,10 @@ with tab_bids:
                     st.session_state.bids.pop(i); st.session_state.result = None
                     if st.session_state.edit_id == bid.get("id"): st.session_state.edit_id = None
                     st.rerun()
+
+            # Comment line (full width, below the row — keeps row heights uniform)
+            if bid.get("comment"):
+                st.markdown(f"<div style='font-size:0.72rem;color:#999;padding-left:24px;margin:-6px 0 2px 0'>{bid['comment']}</div>", unsafe_allow_html=True)
 
             # Detail dropdown (read-only)
             if is_detailed and not is_editing:
