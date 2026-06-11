@@ -394,6 +394,7 @@ with tab_bids:
                 if bid.get("comment"): st.caption(bid["comment"])
             with r[2]:
                 st.markdown(fmt(bid.get("amount",0)))
+                if ev: st.caption(f"{ev:.1f}x EBITDA")
             with r[3]:
                 st.caption(scope(bid))
             with r[4]:
@@ -497,14 +498,15 @@ with tab_matrix:
         mkt_rows = []
         for m, ss in MARKET_STORES.items():
             agg = MKT_AGG[m]
+            margin = agg["ebitda"]/agg["sales"]*100 if agg["sales"]>0 else 0
             mkt_rows.append({
-                "Market":      m,
-                "Stores":      agg["count"],
-                "Net Sales":   fmt(agg["sales"]),
-                "EBITDA":      fmt(agg["ebitda"]),
-                "Margin":      f"{agg['ebitda']/agg['sales']*100:.1f}%" if agg["sales"]>0 else "—",
-                "Maint Capex": fmt(agg["run_rate"]),
-                "Reno Capex":  fmt(agg["reno_capex"]),
+                "Market":       m,
+                "Stores":       agg["count"],
+                "Net Sales":    fmt(agg["sales"]),
+                "EBITDA":       fmt(agg["ebitda"]),
+                "EBITDA Margin":f"{margin:.1f}%",
+                "Maint Capex":  fmt(agg["run_rate"]),
+                "Reno Capex":   fmt(agg["reno_capex"]),
             })
         st.dataframe(pd.DataFrame(mkt_rows), use_container_width=True, hide_index=True)
 
