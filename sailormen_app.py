@@ -70,7 +70,13 @@ MKT_AGG = {m:{"count":len(ss),
            for m,ss in MARKET_STORES.items()}
 
 SAMPLE_BIDS = [
-    
+    {"id":"sh1","buyer":"Flynn Restaurant Group","amount":87e6,"storeIds":[1,2,3,4,5,6,7,8,9,10,11,12,17,18,54,55,167,198,218,220,102,103,107,109,112,113,114,115,116,117,118,119,120,121,122,123,124,125,126,127,177,178,179,230,246],"isSH":True,"breakupPct":2.5,"include":True,"plkApproval":False,"comment":"MIA + ORL SH bid","optMode":"bundle","storeAmounts":{},"closedStores":[]},
+    {"id":"sh2","buyer":"GPS Hospitality","amount":32e6,"storeIds":[128,129,130,131,132,146,148,150,151,152,154,155,156,157,160,162,163,183,187,190,196,199,210,213,214,221,229,250,93,95,97,99,100,101,104,105,106,171,194,242,251,901,902],"isSH":True,"breakupPct":2.5,"include":True,"plkApproval":False,"comment":"JAX + TPA SH bid","optMode":"bundle","storeAmounts":{},"closedStores":[]},
+    {"id":"sh3","buyer":"Boddie-Noell","amount":18e6,"storeIds":[139,140,141,142,143,180,181,185,203,211,228,232,238,241,28,29,30,31,184,186,191,193,207,212,219,170,200,209,223,224,225],"isSH":True,"breakupPct":2.5,"include":True,"plkApproval":False,"comment":"TAL + PNS + SAV SH bid","optMode":"bundle","storeAmounts":{},"closedStores":[]},
+    {"id":"b1","buyer":"Carrols Restaurant Group","amount":130e6,"storeIds":ALL_STORES,"isSH":False,"breakupPct":2.5,"include":True,"plkApproval":False,"comment":"","optMode":"bundle","storeAmounts":{},"closedStores":[]},
+    {"id":"b2","buyer":"NPC International","amount":58e6,"storeIds":[1,2,3,4,5,6,7,8,9,10,11,12,17,18,54,55,167,198,218,220],"isSH":False,"breakupPct":2.5,"include":True,"plkApproval":False,"comment":"Miami only","optMode":"bundle","storeAmounts":{},"closedStores":[]},
+    {"id":"b3","buyer":"Ambrosia QSR","amount":32e6,"storeIds":[102,103,107,109,112,113,114,115,116,117,118,119,120,121,122,123,124,125,126,127,177,178,179,230,246],"isSH":False,"breakupPct":2.5,"include":True,"plkApproval":False,"comment":"Orlando only","optMode":"bundle","storeAmounts":{},"closedStores":[]},
+    {"id":"b4","buyer":"Sun Holdings","amount":135e6,"storeIds":ALL_STORES,"isSH":False,"breakupPct":2.5,"include":True,"plkApproval":False,"comment":"","optMode":"bundle","storeAmounts":{},"closedStores":[]},
 ]
 for _b in SAMPLE_BIDS:
     if "id" not in _b: _b["id"] = str(uuid.uuid4())[:8]
@@ -155,6 +161,57 @@ def bid_form_inline(key_prefix, iv=None, is_edit=False):
     with c3: opt_mode = st.selectbox("Optimize as", ["bundle","perStore"],
                             index=["bundle","perStore"].index(iv.get("optMode","bundle")),
                             key=f"{key_prefix}_mode")
+
+    # Multiple calculator — fills amount (and per-store amounts if perStore)
+    with st.expander("Calculate from EBITDA multiple"):
+        mc1,mc2,mc3 = st.columns([1.5,1.5,2])
+        with mc1:
+            mult_level = st.selectbox("Level", ["Overall bid","By market","By store"],
+                                      key=f"{key_prefix}_mult_level")
+        with mc2:
+            mult_val = st.number_input("Multiple (x)", min_value=0.0, value=5.0, step=0.25,
+                                       format="%.2f", key=f"{key_prefix}_mult_val")
+        with mc3:
+            if mult_level == "By market":
+                mult_mkt = st.selectbox("Market", list(MARKET_STORES.keys()),
+                                        key=f"{key_prefix}_mult_mkt")
+            elif mult_level == "By store":
+                mult_store = st.selectbox("Store", ALL_STORES,
+                                          format_func=lambda s: f"{s} — {STORE_MKT.get(s,'')} — {fmt(STORE_DATA.get(s,{}).get('e',0))} EBITDA",
+                                          key=f"{key_prefix}_mult_store")
+
+        if st.button("Apply multiple", key=f"{key_prefix}_apply_mult", use_container_width=True):
+            if mult_level == "Overall bid":
+                # Sum EBITDA of all selected stores × multiple
+                # We use ALL_STORES as base since store selection happens after
+                total_ebitda = sum(STORE_DATA.get(s,{}).get("e",0) for s in ALL_STORES)
+                calc_amt = max(0, total_ebitda * mult_val / 1e6)
+                st.session_state[f"{key_prefix}_amt"] = round(calc_amt, 1)
+                st.rerun()
+            elif mult_level == "By market":
+                mkt_ebitda = MKT_AGG[mult_mkt]["ebitda"]
+                calc_amt = max(0, mkt_ebitda * mult_val / 1e6)
+                st.session_state[f"{key_prefix}_amt"] = round(calc_amt, 1)
+                st.rerun()
+            elif mult_level == "By store":
+                store_ebitda = STORE_DATA.get(mult_store,{}).get("e",0)
+                calc_amt = max(0, store_ebitda * mult_val / 1e6)
+                st.session_state[f"{key_prefix}_amt"] = round(calc_amt, 1)
+                st.rerun()
+
+        # Show preview
+        if mult_level == "Overall bid":
+            preview_e = sum(STORE_DATA.get(s,{}).get("e",0) for s in ALL_STORES)
+        elif mult_level == "By market":
+            mkt_key = st.session_state.get(f"{key_prefix}_mult_mkt", list(MARKET_STORES.keys())[0])
+            preview_e = MKT_AGG[mkt_key]["ebitda"]
+        else:
+            store_key = st.session_state.get(f"{key_prefix}_mult_store", ALL_STORES[0])
+            preview_e = STORE_DATA.get(store_key,{}).get("e",0)
+        if preview_e > 0:
+            st.caption(f"EBITDA: {fmt(preview_e)}  ×  {mult_val}x  =  **{fmt(preview_e * mult_val)}**")
+        else:
+            st.caption("EBITDA is negative — multiple not applicable")
 
     # ── Row 2: market checkboxes ──────────────────────────────────────────────
     st.caption("Markets")
@@ -498,9 +555,6 @@ with tab_matrix:
                 "Margin":      f"{agg['ebitda']/agg['sales']*100:.1f}%" if agg["sales"]>0 else "—",
                 "Maint Capex": fmt(agg["run_rate"]),
                 "Reno Capex":  fmt(agg["reno_capex"]),
-                "5x":          fmt(agg["ebitda"]*5),
-                "6x":          fmt(agg["ebitda"]*6),
-                "7x":          fmt(agg["ebitda"]*7),
             })
         st.dataframe(pd.DataFrame(mkt_rows), use_container_width=True, hide_index=True)
 
@@ -733,8 +787,7 @@ with tab_ref:
             c=CURE.get(sid,0); rr=RUN_RATE.get(sid,0); rc=RENO_CAPEX.get(sid,0); ry=RENO_YEAR.get(sid,0)
             ref.append({"Store":sid,"Market":m,"Net Sales":s,"EBITDA":e,
                 "Margin":round(e/s*100,1) if s>0 else 0,
-                "Maint Capex":rr,"Reno Capex":rc,"Reno Year":ry or 0,
-                "5x":e*5,"6x":e*6,"7x":e*7,"Cure":c})
+                "Maint Capex":rr,"Reno Capex":rc,"Reno Year":ry or 0,"Cure":c})
     st.dataframe(pd.DataFrame(ref), use_container_width=True, hide_index=True,
         column_config={
             "Net Sales":   st.column_config.NumberColumn(format="$%d"),
@@ -742,9 +795,6 @@ with tab_ref:
             "Margin":      st.column_config.NumberColumn(format="%.1f%%"),
             "Maint Capex": st.column_config.NumberColumn(format="$%d"),
             "Reno Capex":  st.column_config.NumberColumn(format="$%d"),
-            "5x":          st.column_config.NumberColumn(format="$%d"),
-            "6x":          st.column_config.NumberColumn(format="$%d"),
-            "7x":          st.column_config.NumberColumn(format="$%d"),
             "Cure":        st.column_config.NumberColumn(format="$%d"),
         })
     tot_s=sum(STORE_DATA.get(s,{}).get("s",0) for s in ALL_STORES)
