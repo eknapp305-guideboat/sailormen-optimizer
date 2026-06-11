@@ -162,56 +162,6 @@ def bid_form_inline(key_prefix, iv=None, is_edit=False):
                             index=["bundle","perStore"].index(iv.get("optMode","bundle")),
                             key=f"{key_prefix}_mode")
 
-    # Multiple calculator — fills amount (and per-store amounts if perStore)
-    with st.expander("Calculate from EBITDA multiple"):
-        mc1,mc2,mc3 = st.columns([1.5,1.5,2])
-        with mc1:
-            mult_level = st.selectbox("Level", ["Overall bid","By market","By store"],
-                                      key=f"{key_prefix}_mult_level")
-        with mc2:
-            mult_val = st.number_input("Multiple (x)", min_value=0.0, value=5.0, step=0.25,
-                                       format="%.2f", key=f"{key_prefix}_mult_val")
-        with mc3:
-            if mult_level == "By market":
-                mult_mkt = st.selectbox("Market", list(MARKET_STORES.keys()),
-                                        key=f"{key_prefix}_mult_mkt")
-            elif mult_level == "By store":
-                mult_store = st.selectbox("Store", ALL_STORES,
-                                          format_func=lambda s: f"{s} — {STORE_MKT.get(s,'')} — {fmt(STORE_DATA.get(s,{}).get('e',0))} EBITDA",
-                                          key=f"{key_prefix}_mult_store")
-
-        if st.button("Apply multiple", key=f"{key_prefix}_apply_mult", use_container_width=True):
-            if mult_level == "Overall bid":
-                # Sum EBITDA of all selected stores × multiple
-                # We use ALL_STORES as base since store selection happens after
-                total_ebitda = sum(STORE_DATA.get(s,{}).get("e",0) for s in ALL_STORES)
-                calc_amt = max(0, total_ebitda * mult_val / 1e6)
-                st.session_state[f"{key_prefix}_amt"] = round(calc_amt, 1)
-                st.rerun()
-            elif mult_level == "By market":
-                mkt_ebitda = MKT_AGG[mult_mkt]["ebitda"]
-                calc_amt = max(0, mkt_ebitda * mult_val / 1e6)
-                st.session_state[f"{key_prefix}_amt"] = round(calc_amt, 1)
-                st.rerun()
-            elif mult_level == "By store":
-                store_ebitda = STORE_DATA.get(mult_store,{}).get("e",0)
-                calc_amt = max(0, store_ebitda * mult_val / 1e6)
-                st.session_state[f"{key_prefix}_amt"] = round(calc_amt, 1)
-                st.rerun()
-
-        # Show preview
-        if mult_level == "Overall bid":
-            preview_e = sum(STORE_DATA.get(s,{}).get("e",0) for s in ALL_STORES)
-        elif mult_level == "By market":
-            mkt_key = st.session_state.get(f"{key_prefix}_mult_mkt", list(MARKET_STORES.keys())[0])
-            preview_e = MKT_AGG[mkt_key]["ebitda"]
-        else:
-            store_key = st.session_state.get(f"{key_prefix}_mult_store", ALL_STORES[0])
-            preview_e = STORE_DATA.get(store_key,{}).get("e",0)
-        if preview_e > 0:
-            st.caption(f"EBITDA: {fmt(preview_e)}  ×  {mult_val}x  =  **{fmt(preview_e * mult_val)}**")
-        else:
-            st.caption("EBITDA is negative — multiple not applicable")
 
     # ── Row 2: market checkboxes ──────────────────────────────────────────────
     st.caption("Markets")
