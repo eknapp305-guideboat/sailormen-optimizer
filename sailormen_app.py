@@ -281,30 +281,39 @@ with h3:
         st.session_state.show_add = False
         st.rerun()
 
-# Import bids — use session state key to survive reruns
-if "pending_import" not in st.session_state:
-    st.session_state.pending_import = None
+# Import bids — on_change fires instantly on upload AND on X (clear)
+def _handle_upload():
+    f = st.session_state.get("bid_uploader")
+    if f is not None:
+        try:
+            raw = f.read().decode("utf-8")
+            imported = json.loads(raw)
+            if not isinstance(imported, list):
+                st.session_state._import_error = "JSON must be a list of bids"
+                return
+            for b in imported:
+                if "id" not in b: b["id"] = str(uuid.uuid4())[:8]
+            st.session_state.bids     = imported
+            st.session_state.result   = None
+            st.session_state.edit_id  = None
+            st.session_state._import_error = None
+        except Exception as e:
+            st.session_state._import_error = str(e)
+    else:
+        # X clicked — clear bids
+        st.session_state.bids     = []
+        st.session_state.result   = None
+        st.session_state.edit_id  = None
+        st.session_state._import_error = None
 
 imp_col, _ = st.columns([2,4])
 with imp_col:
-    uploaded = st.file_uploader("Import bids (JSON)", type="json",
-                                label_visibility="collapsed", key="bid_uploader")
-    if uploaded is not None:
-        st.session_state.pending_import = uploaded.read()
-
-if st.session_state.pending_import is not None:
-    try:
-        imported = json.loads(st.session_state.pending_import)
-        for b in imported:
-            if "id" not in b: b["id"] = str(uuid.uuid4())[:8]
-        st.session_state.bids          = imported
-        st.session_state.result        = None
-        st.session_state.edit_id       = None
-        st.session_state.pending_import = None
-        st.rerun()
-    except Exception as e:
-        st.error(f"Import failed: {e}")
-        st.session_state.pending_import = None
+    st.file_uploader("Import bids (JSON)", type="json",
+                     label_visibility="collapsed",
+                     key="bid_uploader",
+                     on_change=_handle_upload)
+    if st.session_state.get("_import_error"):
+        st.error(f"Import failed: {st.session_state._import_error}")
 
 st.divider()
 
