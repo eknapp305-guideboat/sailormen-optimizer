@@ -281,21 +281,30 @@ with h3:
         st.session_state.show_add = False
         st.rerun()
 
-# Import bids (below header)
+# Import bids — use session state key to survive reruns
+if "pending_import" not in st.session_state:
+    st.session_state.pending_import = None
+
 imp_col, _ = st.columns([2,4])
 with imp_col:
-    uploaded = st.file_uploader("Import bids (JSON)", type="json", label_visibility="collapsed")
-    if uploaded:
-        try:
-            imported = json.loads(uploaded.read())
-            for b in imported:
-                if "id" not in b: b["id"] = str(uuid.uuid4())[:8]
-            st.session_state.bids   = imported
-            st.session_state.result = None
-            st.session_state.edit_id = None
-            st.rerun()
-        except Exception as e:
-            st.error(f"Import failed: {e}")
+    uploaded = st.file_uploader("Import bids (JSON)", type="json",
+                                label_visibility="collapsed", key="bid_uploader")
+    if uploaded is not None:
+        st.session_state.pending_import = uploaded.read()
+
+if st.session_state.pending_import is not None:
+    try:
+        imported = json.loads(st.session_state.pending_import)
+        for b in imported:
+            if "id" not in b: b["id"] = str(uuid.uuid4())[:8]
+        st.session_state.bids          = imported
+        st.session_state.result        = None
+        st.session_state.edit_id       = None
+        st.session_state.pending_import = None
+        st.rerun()
+    except Exception as e:
+        st.error(f"Import failed: {e}")
+        st.session_state.pending_import = None
 
 st.divider()
 
