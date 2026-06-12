@@ -403,7 +403,10 @@ with tab_bids:
                 st.markdown(buyer_display)
                 if bid.get("comment"): st.caption(bid["comment"])
             with r[2]:
+                net_to_estate = bid.get("amount",0) - cure(bid.get("storeIds",[]))
+                color = "green" if net_to_estate >= 0 else "red"
                 st.markdown(fmt(bid.get("amount",0)))
+                st.markdown(f":{color}[Net: {fmt(net_to_estate)}]")
                 if ev: st.caption(f"{ev:.1f}x EBITDA")
             with r[3]:
                 st.caption(scope(bid))
@@ -626,11 +629,14 @@ with tab_opt:
                 hdr = f"WIN  {'[SH] ' if bid.get('isSH') else ''}{bid.get('buyer','')} — {fmt(bid['amount'])} — {scope(bid)}"
                 if bid.get("comment"): hdr += f"  [{bid['comment']}]"
                 with st.expander(hdr):
-                    s1,s2,s3,s4 = st.columns(4)
-                    s1.metric("Bid",       fmt(bid["amount"]))
-                    s2.metric("EV/EBITDA", f"{ev:.1f}x" if ev else "—")
-                    s3.metric("Net sales", fmt(f["s"]))
-                    s4.metric("Cure",      fmt(c))
+                    net_bid = bid["amount"] - c
+                    s1,s2,s3,s4,s5 = st.columns(5)
+                    s1.metric("Bid",           fmt(bid["amount"]))
+                    s2.metric("Cure costs",    fmt(-c))
+                    s3.metric("Net to estate", fmt(net_bid),
+                              delta=fmt(net_bid), delta_color="normal" if net_bid>=0 else "inverse")
+                    s4.metric("EV/EBITDA",     f"{ev:.1f}x" if ev else "—")
+                    s5.metric("Net sales",     fmt(f["s"]))
                     rows = []
                     for sid in sorted(bid.get("storeIds",[])):
                         sd = STORE_DATA.get(sid,{}); cc = CURE.get(sid,0)
