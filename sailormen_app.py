@@ -74,11 +74,12 @@ for _b in SAMPLE_BIDS:
     if "id" not in _b: _b["id"] = str(uuid.uuid4())[:8]
 
 # ── Session state ──────────────────────────────────────────────────────────────
-if "bids"      not in st.session_state: st.session_state.bids      = [dict(b) for b in SAMPLE_BIDS]
-if "result"    not in st.session_state: st.session_state.result    = None
-if "edit_id"   not in st.session_state: st.session_state.edit_id   = None
-if "show_add"  not in st.session_state: st.session_state.show_add  = False
-if "scenarios" not in st.session_state: st.session_state.scenarios = []
+if "bids"           not in st.session_state: st.session_state.bids           = [dict(b) for b in SAMPLE_BIDS]
+if "result"         not in st.session_state: st.session_state.result         = None
+if "edit_id"        not in st.session_state: st.session_state.edit_id        = None
+if "show_add"       not in st.session_state: st.session_state.show_add       = False
+if "scenarios"      not in st.session_state: st.session_state.scenarios      = []
+if "cure_overrides" not in st.session_state: st.session_state.cure_overrides = {}
 
 # ── Helpers ────────────────────────────────────────────────────────────────────
 def fmt(n):
@@ -94,7 +95,13 @@ def fin(sids):
 def capex_total(sids):
     return sum(RUN_RATE.get(s,0) for s in sids)
 
-def cure(sids): return sum(CURE.get(s,0) for s in sids)
+def cure(sids):
+    overrides = st.session_state.get("cure_overrides", {})
+    return sum(overrides.get(s, overrides.get(str(s), CURE.get(s,0))) for s in sids)
+
+def effective_cure(sid):
+    overrides = st.session_state.get("cure_overrides", {})
+    return overrides.get(sid, overrides.get(str(sid), CURE.get(sid,0)))
 
 def scope(bid):
     if set(bid.get("storeIds",[])) == set(ALL_STORES): return "Full portfolio"
@@ -274,7 +281,11 @@ with h1:
     st.caption(f"Case 26-10451-RAM · Auction: {CASE['auction']} · {CASE['auctionVenue']} · Bid deadline: {CASE['bidDeadline']}")
 with h2:
     # Export bids
-    bids_json = json.dumps(st.session_state.bids, indent=2)
+    export_payload = {
+        "bids": st.session_state.bids,
+        "cure_overrides": {str(k):v for k,v in st.session_state.get("cure_overrides",{}).items()}
+    }
+    bids_json = json.dumps(export_payload, indent=2)
     st.download_button("Export bids", data=bids_json, file_name="sailormen_bids.json",
                        mime="application/json", use_container_width=True)
 with h3:
@@ -291,24 +302,40 @@ def _handle_upload():
     if f is not None:
         try:
             raw = f.read().decode("utf-8")
-            imported = json.loads(raw)
-            if not isinstance(imported, list):
-                st.session_state._import_error = "JSON must be a list of bids"
+            data = json.loads(raw)
+            # Support two formats:
+            # 1. Plain list of bids: [{"buyer":...}, ...]
+            # 2. Dict with bids + cure overrides: {"bids":[...], "cure_overrides":{store_id: amount}}
+            if isinstance(data, list):
+                imported = data
+                cure_overrides = {}
+            elif isinstance(data, dict):
+                imported       = data.get("bids", [])
+                cure_overrides = {int(k): v for k,v in data.get("cure_overrides", {}).items()}
+            else:
+                st.session_state._import_error = "Invalid JSON format"
                 return
             for b in imported:
                 if "id" not in b: b["id"] = str(uuid.uuid4())[:8]
-            st.session_state.bids     = imported
-            st.session_state.result   = None
-            st.session_state.edit_id  = None
-            st.session_state._import_error = None
+            st.session_state.bids           = imported
+            st.session_state.cure_overrides = cure_overrides
+            st.session_state.result         = None
+            st.session_state.edit_id        = None
+            st.session_state._import_error  = None
+            if cure_overrides:
+                st.session_state._import_msg = f"Imported {len(imported)} bids + cure overrides for {len(cure_overrides)} stores"
+            else:
+                st.session_state._import_msg = f"Imported {len(imported)} bids"
         except Exception as e:
             st.session_state._import_error = str(e)
     else:
-        # X clicked — clear bids
-        st.session_state.bids     = []
-        st.session_state.result   = None
-        st.session_state.edit_id  = None
-        st.session_state._import_error = None
+        # X clicked — clear bids and cure overrides
+        st.session_state.bids           = []
+        st.session_state.cure_overrides = {}
+        st.session_state.result         = None
+        st.session_state.edit_id        = None
+        st.session_state._import_error  = None
+        st.session_state._import_msg    = None
 
 imp_col, _ = st.columns([2,4])
 with imp_col:
@@ -318,6 +345,10 @@ with imp_col:
                      on_change=_handle_upload)
     if st.session_state.get("_import_error"):
         st.error(f"Import failed: {st.session_state._import_error}")
+    if st.session_state.get("_import_msg"):
+        st.success(st.session_state._import_msg)
+    if st.session_state.get("cure_overrides"):
+        st.caption(f"🔄 Cure overrides active for {len(st.session_state.cure_overrides)} stores — hardcoded values bypassed")
 
 st.divider()
 
