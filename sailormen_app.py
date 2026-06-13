@@ -140,11 +140,16 @@ def optimize(bids):
         for s in b.get("storeIds",[]): sm.setdefault(s,[]).append(i)
     for s,idxs in sm.items():
         if len(idxs) > 1: model.Add(sum(x[i] for i in idxs) <= 1)
-    # Maximize NET proceeds = bid amount minus cure costs for stores in that bid
-    cure_amounts = [round(sum(CURE.get(s,0) for s in b.get("storeIds",[])) * scale)
-                    for b in bids]
-    net_amounts  = [amounts[i] - cure_amounts[i] for i in range(len(bids))]
-    model.Maximize(sum(net_amounts[i]*x[i] for i in range(len(bids))))
+    # Objective: net of cure OR gross depending on toggle
+    opt_mode_flag = st.session_state.get("opt_objective", "Net of cure costs")
+    if opt_mode_flag == "Net of cure costs":
+        cure_amounts = [round(sum(effective_cure(s) for s in b.get("storeIds",[])) * scale)
+                        for b in bids]
+        net_amounts  = [amounts[i] - cure_amounts[i] for i in range(len(bids))]
+        model.Maximize(sum(net_amounts[i]*x[i] for i in range(len(bids))))
+    else:
+        # Gross: maximize purchase price only
+        model.Maximize(sum(amounts[i]*x[i] for i in range(len(bids))))
     solver.parameters.max_time_in_seconds = 60.0
     solver.parameters.num_search_workers  = 8
     t0 = time.time(); status = solver.Solve(model); ms = round((time.time()-t0)*1000)
@@ -597,9 +602,14 @@ with tab_opt:
     if not included:
         st.warning("No bids included in optimization.")
     else:
-        run_col, save_col = st.columns([2,2])
+        run_col, tog_col, save_col = st.columns([2,2,2])
         with run_col:
             run_clicked = st.button("Run Optimizer", type="primary", use_container_width=True)
+        with tog_col:
+            opt_objective = st.radio("Optimize for",
+                                     ["Net of cure costs", "Gross (SH floor only)"],
+                                     horizontal=True, key="opt_objective",
+                                     help="Net of cure: maximizes bid minus cure obligations. Gross: maximizes purchase price only (SH protection floor applies).")
         with save_col:
             save_name = st.text_input("Scenario name", placeholder="e.g. Round 1 — post-auction",
                                       label_visibility="collapsed", key="scenario_name")
@@ -656,8 +666,10 @@ with tab_opt:
         k3.metric("Net after SH",    fmt(net_sh))
         k4.metric("Cure costs",      fmt(-tot_cure))
         k5.metric("Net after cure",  fmt(net_cure))
+        obj_label = st.session_state.get("opt_objective","Net of cure costs")
         st.caption(f"OR-Tools solved in {ms}ms · {len(winners)} winning bids · "
-                   f"{len(set(win_stores))}/119 stores · SH floor: {fmt(sh_floor)}")
+                   f"{len(set(win_stores))}/119 stores · SH floor: {fmt(sh_floor)} · "
+                   f"Objective: {obj_label}")
 
         # Save scenario button
         if save_name:
