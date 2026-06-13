@@ -54,7 +54,7 @@ MKT_ABBR   = {"Jacksonville":"JAX","Orlando":"ORL","Miami":"MIA",
 
 STORE_DATA = {1:{"s":2357234,"e":418671},2:{"s":1983880,"e":309413},3:{"s":2220696,"e":636543},4:{"s":1553893,"e":200012},5:{"s":2004655,"e":290832},6:{"s":2630819,"e":563987},7:{"s":3156832,"e":791543},8:{"s":2734591,"e":561234},9:{"s":3572386,"e":874841},10:{"s":2567234,"e":535123},11:{"s":3456789,"e":930234},12:{"s":2890123,"e":612345},17:{"s":3234567,"e":940778},18:{"s":2789012,"e":747120},28:{"s":1716298,"e":198234},29:{"s":1208745,"e":-476},30:{"s":1987125,"e":347985},31:{"s":1286075,"e":41136},54:{"s":1923456,"e":134567},55:{"s":1654321,"e":187654},93:{"s":1989874,"e":283476},95:{"s":1765432,"e":156789},97:{"s":1675949,"e":91367},99:{"s":1454123,"e":-988},100:{"s":2759295,"e":548419},101:{"s":1619968,"e":138552},102:{"s":1543210,"e":-62345},103:{"s":2109876,"e":68863},104:{"s":1751095,"e":133960},105:{"s":2080670,"e":268451},106:{"s":2028459,"e":245596},107:{"s":2345678,"e":108992},109:{"s":2234567,"e":93572},112:{"s":2567890,"e":188886},113:{"s":2465827,"e":448104},114:{"s":2678901,"e":239199},115:{"s":1987654,"e":108247},116:{"s":2876543,"e":371315},117:{"s":2345678,"e":155331},118:{"s":2789012,"e":344892},119:{"s":1876543,"e":70301},120:{"s":2972945,"e":593384},121:{"s":2123456,"e":89604},122:{"s":2456789,"e":239303},123:{"s":1765432,"e":-21630},124:{"s":1987654,"e":51346},125:{"s":2678901,"e":475144},126:{"s":2123456,"e":111955},127:{"s":2890123,"e":548724},128:{"s":1938757,"e":150026},129:{"s":1006106,"e":-49044},130:{"s":1589303,"e":25605},131:{"s":1165611,"e":-52962},132:{"s":1489331,"e":116967},139:{"s":1693082,"e":39701},140:{"s":1450102,"e":-23634},141:{"s":1513309,"e":140632},142:{"s":1413903,"e":81190},143:{"s":1456789,"e":56789},146:{"s":1268715,"e":-35425},148:{"s":1358291,"e":18857},150:{"s":2003935,"e":265175},151:{"s":1876543,"e":53389},152:{"s":2234567,"e":191657},154:{"s":1123456,"e":-74145},155:{"s":1765432,"e":47483},156:{"s":1456789,"e":-35756},157:{"s":2098765,"e":109065},160:{"s":1987654,"e":47504},162:{"s":1876543,"e":80991},163:{"s":2098765,"e":130332},167:{"s":2234567,"e":313795},170:{"s":1839113,"e":124263},171:{"s":1765739,"e":120285},177:{"s":2567890,"e":398979},178:{"s":1876543,"e":34107},179:{"s":2789012,"e":462481},180:{"s":1987654,"e":83456},181:{"s":1654321,"e":67890},183:{"s":1123456,"e":-79521},184:{"s":1359720,"e":-71826},185:{"s":1876543,"e":91568},186:{"s":1659790,"e":112273},187:{"s":1456789,"e":38955},190:{"s":2098765,"e":134044},191:{"s":1500747,"e":97760},193:{"s":1207701,"e":-46440},194:{"s":1381563,"e":-37294},196:{"s":2456789,"e":353486},198:{"s":2234567,"e":227129},199:{"s":2678901,"e":270292},200:{"s":1676256,"e":128528},203:{"s":1456789,"e":56789},207:{"s":1132182,"e":-84800},209:{"s":1630842,"e":77060},210:{"s":1234567,"e":-84692},211:{"s":1567890,"e":56789},212:{"s":1876543,"e":337828},213:{"s":1987654,"e":109270},214:{"s":1765432,"e":-27048},218:{"s":1876543,"e":37568},219:{"s":1131343,"e":24290},220:{"s":1654321,"e":160451},221:{"s":1234567,"e":-94951},223:{"s":1498867,"e":44843},224:{"s":1634517,"e":169885},225:{"s":1836329,"e":165680},228:{"s":1456789,"e":56789},229:{"s":1876543,"e":53757},230:{"s":2098765,"e":130253},232:{"s":1234567,"e":45678},238:{"s":1345678,"e":67890},241:{"s":1678901,"e":77278},242:{"s":1301740,"e":-60554},246:{"s":1987654,"e":76143},250:{"s":2345678,"e":154232},251:{"s":1272983,"e":-72864},901:{"s":1292775,"e":-31238},902:{"s":2474357,"e":396400}}
 
-CURE = {1:97558,2:83818,3:100580,4:76508,5:101280,6:115431,7:154791,8:92884,9:130468,10:84258,11:166509,12:88391,17:120490,18:108375,28:55918,29:78260,30:33054,31:51188,54:100778,55:80395,93:90037,95:77061,97:76361,99:86563,100:96007,101:74417,102:64069,103:94405,104:57833,105:51720,106:53785,107:87594,109:83167,112:73230,113:93251,114:101418,115:47706,116:82939,117:75915,118:69506,119:71435,120:55762,121:82007,122:128631,123:86534,124:69104,125:71423,126:63438,127:62384,128:85675,129:50608,130:62283,131:56481,132:100756,139:38753,140:58059,141:89584,142:48954,143:50890,146:62242,148:80662,150:79042,151:76295,152:98118,154:60822,155:85033,156:106485,157:93298,160:93622,162:84572,163:71896,167:85049,170:95752,171:83009,177:83217,178:76789,179:97898,180:89762,181:70287,183:48120,184:69389,185:91569,186:73311,187:64092,190:102751,191:62990,193:63235,194:68221,196:110866,198:110052,199:124129,200:67937,203:50654,207:74112,209:58965,210:75828,211:69400,212:73581,213:81056,214:76238,218:89883,219:68082,220:73381,221:83387,223:56483,224:46303,225:52489,228:51771,229:104607,230:82807,232:45247,238:54818,241:77279,242:80340,246:86505,250:112351,251:92288,901:61281,902:99547}
+CURE = {1:112177,2:99370,3:173013,4:97227,5:131930,6:89348,7:117839,8:126960,9:170439,10:133248,11:196317,12:125487,17:159200,18:94180,28:77254,29:76408,30:69492,31:59701,54:113242,55:106580,93:123522,95:104683,97:93719,99:83199,100:124433,101:78398,102:68442,103:91026,104:98420,105:85538,106:95726,107:91683,109:107415,112:68667,113:114525,114:113993,115:62004,116:114382,117:75475,118:106408,119:68226,120:108879,121:86384,122:162416,123:92010,124:79796,125:105525,126:66452,127:97064,128:95746,129:68532,130:70964,131:48443,132:119137,139:66677,140:86340,141:82301,142:59125,143:59197,146:65404,148:96427,150:91297,151:106387,152:121825,154:90710,155:109028,156:112571,157:93439,160:87097,162:101951,163:95844,167:112057,170:120110,171:96053,177:141140,178:73890,179:128513,180:84238,181:88107,183:67874,184:79256,185:113359,186:75993,187:80933,190:117119,191:79415,193:79886,194:100117,196:146715,198:121300,199:146277,200:69252,203:71773,207:80572,209:65069,210:72555,211:86245,212:79871,213:97187,214:91442,218:113932,219:64948,220:98194,221:85638,223:64678,224:58498,225:72915,228:59658,229:119806,230:99455,232:57782,238:61629,241:91765,242:92106,246:98869,250:125120,251:103383,901:52500,902:119836}
 
 RUN_RATE = {128:48132,129:24063,130:8113,131:24063,132:48127,146:48127,148:95613,150:16227,151:16227,152:48127,154:16227,155:149063,156:16227,157:8113,160:48127,162:48127,163:48127,183:7866,187:48132,190:16232,196:16232,199:48132,210:13532,213:16232,214:16232,221:16232,229:16232,250:16987,102:24064,103:16227,107:8113,109:8113,112:16227,113:15727,114:8116,115:16227,116:16227,117:48127,118:48127,119:48127,120:16227,121:16227,122:7866,123:48127,124:48132,125:24063,126:224063,127:16227,177:16227,178:48132,179:16232,230:16232,246:16232,1:16227,2:16227,3:132863,4:7863,5:15732,6:15727,7:8116,8:16227,9:15727,10:16227,11:15732,12:8116,17:8113,18:8113,54:48127,55:48127,167:47050,198:48132,218:15732,220:15727,93:120613,95:241227,97:16227,99:8113,100:16227,101:16227,104:8765,105:16227,106:16227,171:120613,194:16232,242:16232,251:16987,901:16227,902:16227,139:48127,140:16227,141:24063,142:124063,143:24064,180:16232,181:48132,185:16232,203:16232,211:16232,228:13532,232:16232,238:17487,241:17487,28:16227,29:48127,30:133116,31:16227,184:48132,186:16232,191:48132,193:16232,207:48132,212:15732,219:16232,170:8116,200:48132,209:16232,223:48132,224:24063,225:24066}
 
@@ -133,7 +133,11 @@ def optimize(bids):
         for s in b.get("storeIds",[]): sm.setdefault(s,[]).append(i)
     for s,idxs in sm.items():
         if len(idxs) > 1: model.Add(sum(x[i] for i in idxs) <= 1)
-    model.Maximize(sum(amounts[i]*x[i] for i in range(len(bids))))
+    # Maximize NET proceeds = bid amount minus cure costs for stores in that bid
+    cure_amounts = [round(sum(CURE.get(s,0) for s in b.get("storeIds",[])) * scale)
+                    for b in bids]
+    net_amounts  = [amounts[i] - cure_amounts[i] for i in range(len(bids))]
+    model.Maximize(sum(net_amounts[i]*x[i] for i in range(len(bids))))
     solver.parameters.max_time_in_seconds = 60.0
     solver.parameters.num_search_workers  = 8
     t0 = time.time(); status = solver.Solve(model); ms = round((time.time()-t0)*1000)
@@ -318,8 +322,8 @@ with imp_col:
 st.divider()
 
 # ── Tabs ───────────────────────────────────────────────────────────────────────
-tab_bids, tab_matrix, tab_opt, tab_scenarios, tab_ref = st.tabs([
-    "Bids", "Buyers Matrix", "Optimization", "Scenarios", "Reference"
+tab_bids, tab_matrix, tab_opt, tab_cure, tab_scenarios, tab_ref = st.tabs([
+    "Bids", "Buyers Matrix", "Optimization", "Cure Analysis", "Scenarios", "Reference"
 ])
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -447,12 +451,36 @@ with tab_bids:
 
             # Detail dropdown (read-only full breakdown)
             if is_detailed and not is_editing:
-                d1,d2,d3,d4,d5 = st.columns(5)
-                d1.metric("Net sales", fmt(f_data["s"]))
-                d2.metric("EBITDA",    fmt(f_data["e"]))
-                d3.metric("EV/EBITDA", f"{ev:.1f}x" if ev else "—")
-                d4.metric("Cure",      fmt(cure(bid.get("storeIds",[]))))
-                d5.metric("Maint capex", fmt(capex_total(bid.get("storeIds",[]))))
+                bid_stores   = set(bid.get("storeIds",[]))
+                mkt_stores   = set(s for m in {STORE_MKT.get(s) for s in bid_stores}
+                                   for s in MARKET_STORES.get(m,[]))
+                excl_stores  = [s for s in mkt_stores if s not in bid_stores]
+                bid_cure_tot = cure(bid.get("storeIds",[]))
+                excl_cure_tot= cure(excl_stores)
+                net_est      = bid.get("amount",0) - bid_cure_tot
+
+                d1,d2,d3,d4,d5,d6 = st.columns(6)
+                d1.metric("Net sales",   fmt(f_data["s"]))
+                d2.metric("EBITDA",      fmt(f_data["e"]))
+                d3.metric("EV/EBITDA",   f"{ev:.1f}x" if ev else "—")
+                d4.metric("Cure (bid)",  fmt(bid_cure_tot))
+                net_color = "normal" if net_est >= 0 else "inverse"
+                d5.metric("Net to estate", fmt(net_est),
+                          delta=fmt(net_est), delta_color=net_color)
+                if excl_stores:
+                    d6.metric(f"Excl. cure ({len(excl_stores)} stores)",
+                              fmt(excl_cure_tot),
+                              help="Cure cost on stores in same markets NOT included in this bid")
+                else:
+                    d6.metric("Maint capex", fmt(capex_total(bid.get("storeIds",[]))))
+
+                # Break-even callout
+                break_even = bid_cure_tot
+                shortfall  = break_even - bid.get("amount",0)
+                if shortfall > 0:
+                    st.error(f"⚠️ Bid is **{fmt(shortfall)} below break-even** — cure costs exceed purchase price")
+                else:
+                    st.success(f"✓ Bid clears cure costs by **{fmt(-shortfall)}**")
                 rows = []
                 for sid in sorted(bid.get("storeIds",[])):
                     sd = STORE_DATA.get(sid,{}); cc = CURE.get(sid,0)
@@ -460,11 +488,16 @@ with tab_bids:
                     if bid.get("optMode")=="perStore" and bid.get("storeAmounts"):
                         sa = bid["storeAmounts"].get(str(sid)) or bid["storeAmounts"].get(sid)
                         if sa: store_bid = float(sa)*1e6
+                    alloc = bid["amount"]/len(bid.get("storeIds",[])) if not store_bid else None
+                    store_bid_amt = store_bid if store_bid else alloc
+                    store_net = (store_bid_amt - cc) if store_bid_amt else None
                     rows.append({"Store":sid,"Market":STORE_MKT.get(sid,""),
-                        "Bid":fmt(store_bid) if store_bid else "—",
+                        "Bid":fmt(store_bid) if store_bid else (fmt(alloc)+" *" if alloc else "—"),
+                        "Cure":fmt(cc),
+                        "Net":fmt(store_net) if store_net else "—",
                         "Net Sales":fmt(sd.get("s",0)),"EBITDA":fmt(sd.get("e",0)),
                         "Maint Capex":fmt(RUN_RATE.get(sid,0)),"Reno Capex":fmt(RENO_CAPEX.get(sid,0)),
-                        "Reno Yr":RENO_YEAR.get(sid,0) or "—","Cure":fmt(cc)})
+                        "Reno Yr":RENO_YEAR.get(sid,0) or "—"})
                 st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
 
             # Edit dropdown (inline form below the row)
@@ -629,14 +662,18 @@ with tab_opt:
                 hdr = f"WIN  {'[SH] ' if bid.get('isSH') else ''}{bid.get('buyer','')} — {fmt(bid['amount'])} — {scope(bid)}"
                 if bid.get("comment"): hdr += f"  [{bid['comment']}]"
                 with st.expander(hdr):
-                    net_bid = bid["amount"] - c
+                    net_bid   = bid["amount"] - c
+                    break_even= c
+                    shortfall = break_even - bid["amount"]
                     s1,s2,s3,s4,s5 = st.columns(5)
                     s1.metric("Bid",           fmt(bid["amount"]))
-                    s2.metric("Cure costs",    fmt(-c))
+                    s2.metric("Cure costs",    fmt(c))
                     s3.metric("Net to estate", fmt(net_bid),
                               delta=fmt(net_bid), delta_color="normal" if net_bid>=0 else "inverse")
                     s4.metric("EV/EBITDA",     f"{ev:.1f}x" if ev else "—")
                     s5.metric("Net sales",     fmt(f["s"]))
+                    if shortfall > 0:
+                        st.error(f"⚠️ **{bid.get('buyer','')}** bid is **{fmt(shortfall)} below break-even** — cure costs exceed purchase price")
                     rows = []
                     for sid in sorted(bid.get("storeIds",[])):
                         sd = STORE_DATA.get(sid,{}); cc = CURE.get(sid,0)
@@ -694,6 +731,114 @@ with tab_opt:
             for col_u,(m,ss) in zip(cols_u, um.items()):
                 col_u.markdown(f"**{m}**")
                 col_u.write(", ".join(str(s) for s in ss))
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# CURE ANALYSIS TAB
+# ══════════════════════════════════════════════════════════════════════════════
+with tab_cure:
+    st.markdown("#### Cure vs Bid — Market Summary")
+    st.caption("Net to Estate = Best bid for that market minus cure costs for stores included in that bid. "
+               "Red = bid is below cure (estate pays to sell). Excluded cure = cost of stores in same markets not included in any bid.")
+
+    bids = st.session_state.bids
+    included = [b for b in bids if b.get("include", True)]
+
+    # Build best bid per market group
+    from collections import defaultdict
+    mkt_best = {}  # market -> best bid object
+    for bid in included:
+        mkts = sorted({STORE_MKT.get(s) for s in bid.get("storeIds",[]) if STORE_MKT.get(s)})
+        key  = " + ".join(mkts)
+        if key not in mkt_best or bid["amount"] > mkt_best[key]["amount"]:
+            mkt_best[key] = bid
+
+    # Market-level summary table
+    summary_rows = []
+    for mkt, stores in MARKET_STORES.items():
+        # Find best single-market bid
+        best_bid = None
+        for bid in included:
+            bid_mkts = {STORE_MKT.get(s) for s in bid.get("storeIds",[])}
+            if bid_mkts == {mkt}:
+                if best_bid is None or bid["amount"] > best_bid["amount"]:
+                    best_bid = bid
+
+        all_cure      = cure(stores)
+        if best_bid:
+            bid_stores    = best_bid.get("storeIds",[])
+            bid_cure      = cure(bid_stores)
+            excl_stores   = [s for s in stores if s not in set(bid_stores)]
+            excl_cure     = cure(excl_stores)
+            net           = best_bid["amount"] - bid_cure
+            covered       = len(bid_stores)
+        else:
+            bid_cure      = 0
+            excl_cure     = all_cure
+            excl_stores   = stores
+            net           = 0
+            covered       = 0
+
+        summary_rows.append({
+            "Market":          mkt,
+            "Stores (total)":  len(stores),
+            "Best bid":        best_bid["buyer"][:30] if best_bid else "No bid",
+            "Stores (bid)":    covered,
+            "Bid amount":      fmt(best_bid["amount"]) if best_bid else "—",
+            "Cure (bid stores)": fmt(bid_cure) if best_bid else "—",
+            "Net to estate":   fmt(net) if best_bid else "—",
+            "Excl. stores":    len(excl_stores),
+            "Excl. cure cost": fmt(excl_cure) if excl_stores else "—",
+            "All-in cure":     fmt(all_cure),
+        })
+
+    df_cure = pd.DataFrame(summary_rows)
+    st.dataframe(df_cure, use_container_width=True, hide_index=True)
+
+    # Portfolio totals
+    tot_best = sum(b["amount"] for b in included)
+    tot_cure_all = sum(CURE.values())
+    st.divider()
+    pc1,pc2,pc3,pc4 = st.columns(4)
+    pc1.metric("Portfolio cure (all 119)", fmt(tot_cure_all))
+    pc2.metric("All included bids (gross)", fmt(tot_best))
+    pc3.metric("Break-even bid needed", fmt(tot_cure_all))
+    pc4.metric("Portfolio cure gap", fmt(tot_best - tot_cure_all),
+               delta=fmt(tot_best - tot_cure_all),
+               delta_color="normal" if tot_best > tot_cure_all else "inverse")
+
+    st.divider()
+    st.markdown("#### Break-even calculator")
+    st.caption("Enter any set of stores — shows minimum bid to clear cure costs")
+    calc_mkts = st.multiselect("Select markets", list(MARKET_STORES.keys()),
+                                key="cure_calc_mkts")
+    if calc_mkts:
+        calc_stores = [s for m in calc_mkts for s in MARKET_STORES[m]]
+        calc_cure   = cure(calc_stores)
+        cc1,cc2,cc3 = st.columns(3)
+        cc1.metric("Stores selected", len(calc_stores))
+        cc2.metric("Total cure", fmt(calc_cure))
+        cc3.metric("Break-even bid", fmt(calc_cure))
+        st.caption("Any bid below this number results in negative net proceeds to the estate for these stores.")
+
+    st.divider()
+    st.markdown("#### Store-level cure detail — all 119 stores")
+    cure_store_rows = []
+    for mkt, stores in MARKET_STORES.items():
+        for sid in stores:
+            sd = STORE_DATA.get(sid,{})
+            cc = CURE.get(sid,0)
+            # Find which bid covers this store
+            covering = [b["buyer"] for b in included if sid in b.get("storeIds",[])]
+            cure_store_rows.append({
+                "Store":    sid,
+                "Market":   mkt,
+                "EBITDA":   fmt(sd.get("e",0)),
+                "Cure":     fmt(cc),
+                "Net EBITDA": fmt(sd.get("e",0) - cc),
+                "Covered by": covering[0][:25] if covering else "No bid",
+            })
+    st.dataframe(pd.DataFrame(cure_store_rows), use_container_width=True, hide_index=True)
 
 # ══════════════════════════════════════════════════════════════════════════════
 # SCENARIOS TAB
