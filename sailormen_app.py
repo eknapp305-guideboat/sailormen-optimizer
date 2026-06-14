@@ -906,13 +906,23 @@ with tab_curecosts:
                "Click any cell in Rent / Tax / R&A Pre / R&A Post to edit — Total recalculates automatically. "
                "Copy/paste from Excel works (select a range, paste). Changes apply immediately to all tabs.")
 
-    rc0, rc1, rc2, rc3, rc4, rc5 = st.columns([1.3,1.3,1.3,1.3,1.3,1.6])
-    with rc0:
-        mkt_filter = st.multiselect("Markets", list(MARKET_STORES.keys()),
-                                    placeholder="All markets", key="cure_mkt_filter")
+    # Market checkboxes — like the bid form market selector
+    st.caption("Filter by market")
+    mc = st.columns(7)
+    mkt_filter = []
+    for j,(mkt,stores) in enumerate(MARKET_STORES.items()):
+        with mc[j]:
+            if st.checkbox(f"{MKT_ABBR[mkt]} ({len(stores)})", key=f"cure_mkt_cb_{mkt}"):
+                mkt_filter.append(mkt)
+
+    rc1, rc2, rc3, rc4, rc5 = st.columns([2.2,1.3,1.3,1.3,1.6])
     with rc1:
-        store_filter = st.text_input("Store #s (optional)", placeholder="e.g. 128, 129",
-                                     key="cure_store_filter")
+        # Store multiselect — scoped to checked markets if any, else all stores
+        store_pool = [s for m in mkt_filter for s in MARKET_STORES[m]] if mkt_filter else ALL_STORES
+        store_filter_sel = st.multiselect("Filter/sort specific stores (optional)",
+                                          sorted(store_pool),
+                                          placeholder="All stores in selected markets",
+                                          key="cure_store_filter")
     with rc2:
         sort_by = st.selectbox("Sort by", ["Store #", "Market", "Landlord",
                                             "Rent", "Tax", "R&A Pre", "R&A Post", "Total Cure"],
@@ -922,6 +932,8 @@ with tab_curecosts:
             st.session_state.cure_overrides = {}
             st.session_state.cure_component_overrides = {}
             st.session_state.cure_editor_version += 1
+            for m in MARKET_STORES:
+                st.session_state[f"cure_mkt_cb_{m}"] = False
             st.rerun()
     with rc4:
         cure_export = json.dumps({str(k):v for k,v in
@@ -973,14 +985,9 @@ with tab_curecosts:
     if mkt_filter:
         df_cure = df_cure[df_cure["Market"].isin(mkt_filter)]
 
-    # Filter by store number(s) — comma-separated list
-    if store_filter.strip():
-        try:
-            wanted = {int(x.strip()) for x in store_filter.split(",") if x.strip().isdigit()}
-            if wanted:
-                df_cure = df_cure[df_cure["Store"].isin(wanted)]
-        except Exception:
-            pass
+    # Filter by specific store(s) — empty selection means all stores in scope
+    if store_filter_sel:
+        df_cure = df_cure[df_cure["Store"].isin(store_filter_sel)]
 
     # Sort
     sort_map = {"Store #": "Store", "Market": "Market", "Landlord": "Landlord",
@@ -1050,7 +1057,7 @@ with tab_curecosts:
     n_label = f"{len(filtered_store_ids)} store" + ("s" if len(filtered_store_ids)!=1 else "")
     filter_desc = []
     if mkt_filter: filter_desc.append(", ".join(mkt_filter))
-    if store_filter.strip(): filter_desc.append(f"stores {store_filter.strip()}")
+    if store_filter_sel: filter_desc.append(f"stores {', '.join(str(s) for s in store_filter_sel)}")
     scope_label = " · ".join(filter_desc) if filter_desc else "All 119 stores"
     st.caption(f"Showing: {scope_label} ({n_label})")
 
