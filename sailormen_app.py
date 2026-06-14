@@ -91,6 +91,7 @@ if "edit_id"        not in st.session_state: st.session_state.edit_id        = N
 if "show_add"       not in st.session_state: st.session_state.show_add       = False
 if "scenarios"      not in st.session_state: st.session_state.scenarios      = []
 if "cure_overrides" not in st.session_state: st.session_state.cure_overrides = {}
+if "cure_component_overrides" not in st.session_state: st.session_state.cure_component_overrides = {}
 if "cure_editor_version" not in st.session_state: st.session_state.cure_editor_version = 0
 
 # ── Helpers ────────────────────────────────────────────────────────────────────
@@ -945,9 +946,6 @@ with tab_curecosts:
         csv_data = pd.DataFrame(csv_rows).to_csv(index=False)
         st.download_button("Export to CSV", data=csv_data, file_name="cure_schedule.csv",
                            mime="text/csv", use_container_width=True)
-
-    if "cure_component_overrides" not in st.session_state:
-        st.session_state.cure_component_overrides = {}
 
     # ── Full 119-row spreadsheet-style table ───────────────────────────────────
     cure_rows = []
