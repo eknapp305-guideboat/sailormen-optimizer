@@ -358,8 +358,8 @@ with imp_col:
 st.divider()
 
 # ── Tabs ───────────────────────────────────────────────────────────────────────
-tab_bids, tab_matrix, tab_opt, tab_cure, tab_scenarios, tab_ref = st.tabs([
-    "Bids", "Buyers Matrix", "Optimization", "Cure Analysis", "Scenarios", "Reference"
+tab_bids, tab_matrix, tab_opt, tab_cure, tab_curecosts, tab_scenarios, tab_ref = st.tabs([
+    "Bids", "Buyers Matrix", "Optimization", "Cure Analysis", "Cure Costs", "Scenarios", "Reference"
 ])
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -882,6 +882,89 @@ with tab_cure:
                 "Covered by": covering[0][:25] if covering else "No bid",
             })
     st.dataframe(pd.DataFrame(cure_store_rows), use_container_width=True, hide_index=True)
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# CURE COSTS TAB — live editable cure schedule
+# ══════════════════════════════════════════════════════════════════════════════
+with tab_curecosts:
+    st.markdown("#### Cure Cost Schedule — editable")
+    st.caption("Edit any value below to update cure costs in real time. Changes apply immediately "
+               "across all tabs (Bids, Buyers Matrix, Optimization, Cure Analysis) without needing "
+               "a file upload. Click 'Reset to base schedule' to discard edits and revert to the "
+               "originally loaded values.")
+
+    rc1, rc2, rc3 = st.columns([1.5,1.5,5])
+    with rc1:
+        if st.button("Reset to base schedule", use_container_width=True):
+            st.session_state.cure_overrides = {}
+            st.rerun()
+    with rc2:
+        cure_export = json.dumps({str(k):v for k,v in
+                                   {s: effective_cure(s) for s in ALL_STORES}.items()})
+        st.download_button("Export cure schedule", data=cure_export,
+                           file_name="cure_schedule.json", mime="application/json",
+                           use_container_width=True)
+
+    # Build editable table — one row per store
+    cure_rows = []
+    for mkt, stores in MARKET_STORES.items():
+        for sid in stores:
+            base_val = CURE.get(sid, 0)
+            curr_val = effective_cure(sid)
+            cure_rows.append({
+                "Store": sid,
+                "Market": mkt,
+                "Base Cure ($)": base_val,
+                "Current Cure ($)": curr_val,
+                "Override?": curr_val != base_val,
+            })
+
+    df_cure_edit = pd.DataFrame(cure_rows)
+
+    edited_cure = st.data_editor(
+        df_cure_edit,
+        use_container_width=True,
+        hide_index=True,
+        disabled=["Store","Market","Base Cure ($)","Override?"],
+        column_config={
+            "Store":            st.column_config.NumberColumn(width="small"),
+            "Market":           st.column_config.TextColumn(width="medium"),
+            "Base Cure ($)":    st.column_config.NumberColumn(format="$%d", width="medium"),
+            "Current Cure ($)": st.column_config.NumberColumn(format="$%d", width="medium",
+                                                                help="Edit this value to override"),
+            "Override?":        st.column_config.CheckboxColumn(width="small"),
+        },
+        key="cure_cost_editor",
+        height=600,
+    )
+
+    # Detect changes and write back to session state
+    new_overrides = {}
+    for _, row in edited_cure.iterrows():
+        sid = int(row["Store"])
+        new_val = row["Current Cure ($)"]
+        base_val = CURE.get(sid, 0)
+        if new_val != base_val:
+            new_overrides[sid] = new_val
+
+    if new_overrides != {int(k): v for k,v in st.session_state.cure_overrides.items()}:
+        st.session_state.cure_overrides = new_overrides
+        st.session_state.result = None  # invalidate stale optimization results
+        st.rerun()
+
+    # Summary
+    st.divider()
+    tot_base = sum(CURE.values())
+    tot_curr = sum(effective_cure(s) for s in ALL_STORES)
+    sc1, sc2, sc3 = st.columns(3)
+    sc1.metric("Base portfolio cure", fmt(tot_base))
+    sc2.metric("Current portfolio cure", fmt(tot_curr))
+    sc3.metric("Net change", fmt(tot_curr - tot_base),
+               delta=fmt(tot_curr - tot_base),
+               delta_color="inverse" if tot_curr > tot_base else "normal")
+    if st.session_state.cure_overrides:
+        st.caption(f"🔄 {len(st.session_state.cure_overrides)} store(s) have overridden cure values")
 
 # ══════════════════════════════════════════════════════════════════════════════
 # SCENARIOS TAB
