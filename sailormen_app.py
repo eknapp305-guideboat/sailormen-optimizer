@@ -904,19 +904,23 @@ with tab_curecosts:
                "Click any cell in Rent / Tax / R&A Pre / R&A Post to edit — Total recalculates automatically. "
                "Copy/paste from Excel works (select a range, paste). Changes apply immediately to all tabs.")
 
-    rc1, rc2, rc3, rc4 = st.columns([1.3,1.3,1.3,3])
+    rc1, rc2, rc3, rc4, rc5 = st.columns([1.5,1.3,1.3,1.3,1.6])
     with rc1:
+        sort_by = st.selectbox("Sort by", ["Store #", "Market", "Landlord",
+                                            "Rent", "Tax", "R&A Pre", "R&A Post", "Total Cure"],
+                               key="cure_sort_by")
+    with rc2:
         if st.button("Reset all to base", use_container_width=True):
             st.session_state.cure_overrides = {}
             st.session_state.cure_component_overrides = {}
             st.rerun()
-    with rc2:
+    with rc3:
         cure_export = json.dumps({str(k):v for k,v in
                                    {s: effective_cure(s) for s in ALL_STORES}.items()})
         st.download_button("Export to JSON", data=cure_export,
                            file_name="cure_schedule.json", mime="application/json",
                            use_container_width=True)
-    with rc3:
+    with rc5:
         # Excel-style CSV export
         csv_rows = []
         for mkt, stores in MARKET_STORES.items():
@@ -958,6 +962,13 @@ with tab_curecosts:
             })
 
     df_cure = pd.DataFrame(cure_rows)
+
+    sort_map = {"Store #": "Store", "Market": "Market", "Landlord": "Landlord",
+                "Rent": "Rent", "Tax": "Tax", "R&A Pre": "R&A Pre",
+                "R&A Post": "R&A Post", "Total Cure": "Total Cure"}
+    sort_col = sort_map.get(sort_by, "Store")
+    ascending = sort_col in ("Store","Market","Landlord")
+    df_cure = df_cure.sort_values(sort_col, ascending=ascending).reset_index(drop=True)
 
     edited = st.data_editor(
         df_cure,
@@ -1003,11 +1014,11 @@ with tab_curecosts:
 
     if changed:
         st.session_state.result = None
-        st.rerun()
+        # No st.rerun() here — avoids re-sorting/jumping the table mid-edit.
+        # Values are picked up on the next natural rerun (tab switch, button click, etc.)
 
     # ── Bottom summary row, like an Excel totals row ──────────────────────────
     st.markdown("---")
-    tot_rent  = sum(r["Rent"] for r in cure_rows) if not changed else None
     df_disp = edited
     tr1,tr2,tr3,tr4,tr5,tr6 = st.columns(6)
     tr1.metric("Total Rent",     fmt(df_disp["Rent"].sum()))
