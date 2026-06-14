@@ -91,6 +91,7 @@ if "edit_id"        not in st.session_state: st.session_state.edit_id        = N
 if "show_add"       not in st.session_state: st.session_state.show_add       = False
 if "scenarios"      not in st.session_state: st.session_state.scenarios      = []
 if "cure_overrides" not in st.session_state: st.session_state.cure_overrides = {}
+if "cure_editor_version" not in st.session_state: st.session_state.cure_editor_version = 0
 
 # ── Helpers ────────────────────────────────────────────────────────────────────
 def fmt(n):
@@ -919,6 +920,7 @@ with tab_curecosts:
         if st.button("Reset all to base", use_container_width=True):
             st.session_state.cure_overrides = {}
             st.session_state.cure_component_overrides = {}
+            st.session_state.cure_editor_version += 1
             st.rerun()
     with rc4:
         cure_export = json.dumps({str(k):v for k,v in
@@ -1008,7 +1010,7 @@ with tab_curecosts:
             "R&A Post":   st.column_config.NumberColumn(format="$%d", width="small", step=100),
             "Total Cure": st.column_config.NumberColumn(format="$%d", width="medium"),
         },
-        key="cure_full_editor",
+        key=f"cure_full_editor_{st.session_state.cure_editor_version}",
         height=560,
     )
 
