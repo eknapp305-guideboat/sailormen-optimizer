@@ -62,6 +62,17 @@ RENO_CAPEX = {128:525000,129:350000,130:750000,131:1000000,132:525000,146:750000
 
 RENO_YEAR = {128:2029,129:2027,130:2027,131:2028,132:2029,146:2029,148:2028,150:2029,151:2029,152:2029,154:2031,155:2027,156:2029,157:2028,160:2029,162:2029,163:2030,183:2028,187:2030,190:2030,196:2030,199:2029,210:2031,213:2032,214:2032,221:2032,229:2032,250:2035,102:2027,103:2029,107:2028,109:2027,112:2029,113:2034,114:2028,115:2030,116:2029,117:2026,118:2029,119:2029,120:2029,121:2030,122:2028,123:2029,124:2029,125:2028,126:2027,127:2026,177:2026,178:2029,179:2029,230:2032,246:2034,1:2030,2:2029,3:2028,4:2028,5:2030,6:2033,7:2028,8:2029,9:2029,10:2029,11:2030,12:2028,17:2028,18:2027,54:2031,55:2029,167:2027,198:2031,218:2032,220:2032,93:2027,95:2026,97:2030,99:2028,100:2029,101:2031,104:2027,105:2029,106:2026,171:2027,194:2029,242:2033,251:2035,901:2033,902:2033,139:2029,140:2029,141:2028,142:2028,143:2028,180:2029,181:2029,185:2030,203:2030,211:2031,228:2032,232:2032,238:2033,241:2033,28:2029,29:2030,30:2027,31:2030,184:2030,186:2030,191:2026,193:2030,207:2031,212:2032,219:2032,170:2027,200:2031,209:2031,223:2029,224:2028,225:2027}
 
+
+CURE_RENT = {1:20304,2:22620,3:62688,4:39757,5:28592,6:12956,7:29607,8:37925,9:13830,10:30226,11:73209,12:23893,17:44498,18:0,28:29462,29:32164,30:19314,31:26146,54:27377,55:27606,93:38531,95:36179,97:26422,99:20345,100:36141,101:13906,102:13746,103:13915,104:36026,105:28619,106:35252,107:24351,109:36165,112:13633,113:26200,114:30675,115:13746,116:33164,117:13830,118:33275,119:13830,120:38785,121:21653,122:25506,123:31675,124:13830,125:32082,126:19805,127:21575,128:24721,129:29739,130:13920,131:13830,132:35012,139:28067,140:29074,141:16218,142:25959,143:22823,146:10833,148:24845,150:15457,151:24771,152:28841,154:36213,155:36887,156:23432,157:16646,160:14333,162:27009,163:26674,167:50354,170:33527,171:22338,177:49156,178:19058,179:30250,180:30195,181:29954,183:36085,184:25379,185:29703,186:24806,187:29055,190:27884,191:28722,193:35337,194:39986,196:43037,198:27014,199:39626,200:27265,203:34939,207:37547,209:26178,210:25385,211:33000,212:20833,213:23625,214:25903,218:35438,219:22306,220:32473,221:24378,223:21404,224:21906,225:21378,228:28750,229:24697,230:24500,232:21167,238:15575,241:30625,242:23625,246:33750,250:30525,251:42263,901:23341,902:32508}
+
+CURE_TAX = {1:41550,2:32714,3:41043,4:13980,5:49331,6:22212,7:14190,8:32603,9:70726,10:41665,11:45120,12:39911,17:36520,18:22977,28:10228,29:19653,30:9305,31:4605,54:47667,55:37325,93:39191,95:29117,97:30113,99:31379,100:27141,101:27837,102:28985,103:38061,104:18738,105:12934,106:16248,107:33877,109:35344,112:17777,113:39429,114:40460,115:15793,116:29404,117:26709,118:30944,119:15720,120:8196,121:27762,122:90251,123:33985,124:27112,125:14765,126:11744,127:17416,128:28189,129:18709,130:21632,131:16814,132:51759,139:5359,140:27761,141:35817,142:3143,143:1032,146:32294,148:36122,150:31562,151:45342,152:48305,154:31558,155:45295,156:60661,157:37406,160:38004,162:40600,163:34877,167:12888,170:47442,171:36003,177:37031,178:27848,179:48725,180:19112,181:39410,183:1701,184:20440,185:34217,186:17016,187:20366,190:52597,191:19655,193:19836,194:21506,196:51606,198:50578,199:56434,200:7918,203:6913,207:21380,209:5728,210:24225,211:30223,212:17003,213:40773,214:36223,218:44150,219:17763,220:30915,221:37650,223:12377,224:4721,225:7573,228:10523,229:59596,230:37529,232:7314,238:25551,241:26688,242:40673,246:35034,250:56572,251:34047,901:19193,902:35045}
+
+CURE_RA_PRE = {1:13468,2:11418,3:17701,4:11056,5:13620,6:14161,7:19445,8:14726,9:22452,10:15282,11:18836,12:15969,17:20572,18:18626,28:9850,29:6402,30:10593,31:7568,54:8550,55:10923,93:11289,95:9805,97:8172,99:7811,100:16033,101:8983,102:6726,103:9444,104:11701,105:12237,106:10841,107:8778,109:9380,112:8726,113:13721,114:11606,115:8369,116:13170,117:8971,118:11525,119:10144,120:15790,121:9599,122:12294,123:6597,124:9415,125:14224,126:9157,127:14842,128:11328,129:5626,130:8884,131:6776,132:8489,139:8508,140:7175,141:8450,142:7707,143:9751,146:6119,148:8346,150:11898,151:9766,152:11819,154:6235,155:7436,156:7835,157:8853,160:8102,162:9393,163:9291,167:12960,170:9455,171:9641,177:13087,178:7066,179:12973,180:9730,181:5377,183:6761,184:8344,185:12696,186:9618,187:8432,190:9883,191:8159,193:6384,194:8354,196:13830,198:10597,199:13263,200:7442,203:7169,207:5824,209:8826,210:6354,211:6202,212:10981,213:8690,214:7541,218:8833,219:6700,220:8556,221:6204,223:8332,224:8743,225:9994,228:5618,229:9456,230:9399,232:7886,238:5943,241:9197,242:7614,246:7981,250:10249,251:7017,901:8372,902:14380}
+
+CURE_RA_POST = {1:36856,2:32619,3:51581,4:32434,5:40386,6:40019,7:54597,8:41706,9:63431,10:46074,11:59153,12:45714,17:57609,18:52577,28:27714,29:18188,30:30280,31:21381,54:29648,55:30727,93:34511,95:29581,97:29013,99:23664,100:45118,101:27672,102:18985,103:29604,104:31956,105:31747,106:33385,107:24677,109:26526,112:28531,113:35176,114:31253,115:24097,116:38644,117:25966,118:30664,119:28532,120:46108,121:27371,122:34364,123:19753,124:29439,125:44455,126:25746,127:43231,128:31508,129:14458,130:26527,131:11023,132:23877,139:24743,140:22330,141:21816,142:22316,143:25590,146:16158,148:27115,150:32380,151:26508,152:32861,154:16704,155:19410,156:20642,157:30535,160:26659,162:24950,163:25002,167:35855,170:29686,171:28071,177:41866,178:19920,179:36565,180:25201,181:13367,183:23328,184:25093,185:36743,186:24554,187:23081,190:26755,191:22880,193:18328,194:30271,196:38242,198:33111,199:36954,200:26627,203:22752,207:15821,209:24336,210:16591,211:16820,212:31053,213:24100,214:21775,218:25511,219:18178,220:26250,221:17406,223:22566,224:23128,225:33970,228:14768,229:26057,230:28026,232:21414,238:14560,241:25255,242:20194,246:22104,250:27773,251:20057,901:1594,902:37903}
+
+CURE_LANDLORD = {1: 'SVC ABS', 2: 'SVC ABS', 3: 'Realty Income Corp', 4: 'The Promenada Plaza Partnership c/o', 5: 'Los Compadres', 6: 'Realty Income Corp', 7: 'Field Apartments', 8: 'SB SAND LLC', 9: 'Store SPE Chancellor 2021-3', 10: 'SVC ABS', 11: 'F&L Properties', 12: 'SVC ABS', 17: 'SVC ABS', 18: 'Nazih Chamoun c/o Brad Kline with P', 28: 'SVC ABS', 29: 'Realty Income Corp', 30: 'Jean Cornil', 31: 'Nine Mile Plaza Investors c/o Victo', 54: 'SVC ABS', 55: 'First Power Group', 93: 'B-Thap', 95: 'Realty Income Corp', 97: 'Realty Income Corp', 99: 'Anna Smith Barthell (John G. Barthe', 100: 'Realty Income Corp', 101: 'Store SPE Chancellor 2021-3', 102: 'Store SPE Chancellor 2021-3', 103: 'Store SPE Chancellor 2021-3', 104: 'Realty Income Corp', 105: 'Heart of Florida c/o Brookhill Mana', 106: 'Realty Income Corp', 107: 'LEEAGLES', 109: 'Realty Income Corp', 112: 'FREP V', 113: 'LDP Bailey Road LLC', 114: '402 Main', 115: 'Store SPE Chancellor 2021-3', 116: 'HS Land Holdings LTD', 117: 'Store SPE Chancellor 2021-3', 118: 'WDP Enterprises at Melbourne LLC', 119: 'Store SPE Chancellor 2021-3', 120: 'Vast Peak Property LLC', 121: 'HS Land Holdings LTD', 122: 'HS Land Holdings LTD', 123: 'Realty Income Corp', 124: 'Store SPE Chancellor 2021-3', 125: 'HS Land Holdings LTD', 126: 'HS Land Holdings LTD', 127: 'Shepard Banks Investment', 128: 'HS Land Holdings LTD', 129: 'Realty Income Corp', 130: 'Store SPE Chancellor 2021-3', 131: 'Store SPE Chancellor 2021-3', 132: 'J11823 PLANO ROAD LLC', 139: '813 Lake Bradford FL', 140: 'Altocumulus', 141: 'Strickland Brothers', 142: 'Realty Income Corp', 143: 'Realty Income Corp', 146: '50% Brewer Family Trust dated May 2', 148: 'LLD Family Properties II', 150: 'Hart Centers VI LTD', 151: 'Anna Smith Barthell (John G. Barthe', 152: '8007 Normandy', 154: 'Realty Income Corp', 155: '10132 SAN JOSE NS LLC & 10132 SAN J', 156: '524 Atlantic Blvd', 157: 'MQ Series Investments', 160: 'FLI Properties', 162: 'Narita Holdings', 163: '5581 Soutel', 167: 'South Dade Shopping', 170: 'Iris Associates LP', 171: 'Howard N Real Estate Investments', 177: 'Inverinvest Company LLC', 178: 'Spider Group Corporation', 179: 'Mocny Limited Partnership LLLP', 180: 'Rooster 2 Quincy Properties', 181: 'Jengeo Realty', 183: 'The Richard Esnard Living Trust Dat', 184: 'MESA Crestview', 185: 'Freedom Holdings', 186: 'EEMS Kerollos', 187: '2496 Blanding Blvd LLC -Eliaho Wein', 190: 'Sanft and Hollenbach', 191: 'Apple & Apple', 193: 'KGGK Venture LLC', 194: 'TMAMM', 196: 'Golem Duval', 198: '4946 South 25th Street', 199: '320', 200: 'Augusta Road', 203: 'Lawrence Martin', 207: 'Luke Starlight', 209: 'DoubleV Pooler', 210: 'Neimon Group LLC', 211: 'Andrade Associates Limited Partners', 212: 'Anna Smith Barthell (John G. Barthe', 213: 'VDM Longwood Retail', 214: 'Rizzy Investment', 218: 'LR911', 219: 'WACHS Capital LP', 220: 'SO Miami Kal-Si-Stem', 221: 'LBJ Alachua', 223: 'RGS Commerical LLC', 224: '4202 Third Avenue', 225: 'James E. Weilbaecher Jr. Revocable ', 228: 'Blue Dominion', 229: 'Atrium Circle CP', 230: 'The San Marino Group', 232: 'Seven Prings Trust and Vinton & Son', 238: '404 Midland Avenue', 241: 'Art Family Investments Corp', 242: '63rd Terrace', 246: 'Orange Way Properties', 250: 'Navdeep Singh & Rajinder Singh', 251: 'Investments AAB Two', 901: 'JDSI', 902: '820 N Washington'}
+
 MKT_AGG = {m:{"count":len(ss),
               "sales":sum(STORE_DATA.get(s,{}).get("s",0) for s in ss),
               "ebitda":sum(STORE_DATA.get(s,{}).get("e",0) for s in ss),
@@ -885,19 +896,20 @@ with tab_cure:
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# CURE COSTS TAB — live editable cure schedule
+# CURE COSTS TAB — live editable cure schedule with component breakdown
 # ══════════════════════════════════════════════════════════════════════════════
 with tab_curecosts:
     st.markdown("#### Cure Cost Schedule — editable")
-    st.caption("Edit any value below to update cure costs in real time. Changes apply immediately "
-               "across all tabs (Bids, Buyers Matrix, Optimization, Cure Analysis) without needing "
-               "a file upload. Click 'Reset to base schedule' to discard edits and revert to the "
-               "originally loaded values.")
+    st.caption("Estimated Cure Costs = Rent Due + Property Taxes + Pre-Petition R&A + Post-Petition R&A. "
+               "Edit the Total column directly for a quick override, or expand a market below to edit "
+               "individual components — the total recalculates automatically. Changes apply immediately "
+               "across all tabs without needing a file upload.")
 
     rc1, rc2, rc3 = st.columns([1.5,1.5,5])
     with rc1:
         if st.button("Reset to base schedule", use_container_width=True):
             st.session_state.cure_overrides = {}
+            st.session_state.cure_component_overrides = {}
             st.rerun()
     with rc2:
         cure_export = json.dumps({str(k):v for k,v in
@@ -906,19 +918,31 @@ with tab_curecosts:
                            file_name="cure_schedule.json", mime="application/json",
                            use_container_width=True)
 
-    # Build editable table — one row per store
+    if "cure_component_overrides" not in st.session_state:
+        st.session_state.cure_component_overrides = {}
+
+    # ── Quick-edit: Total only, one row per store, filterable by market ──────
+    mkt_filter = st.selectbox("Filter by market", ["All markets"] + list(MARKET_STORES.keys()),
+                              key="cure_mkt_filter")
+    filter_stores = ALL_STORES if mkt_filter == "All markets" else MARKET_STORES[mkt_filter]
+
     cure_rows = []
-    for mkt, stores in MARKET_STORES.items():
-        for sid in stores:
-            base_val = CURE.get(sid, 0)
-            curr_val = effective_cure(sid)
-            cure_rows.append({
-                "Store": sid,
-                "Market": mkt,
-                "Base Cure ($)": base_val,
-                "Current Cure ($)": curr_val,
-                "Override?": curr_val != base_val,
-            })
+    for sid in filter_stores:
+        mkt = STORE_MKT.get(sid,"")
+        base_val = CURE.get(sid, 0)
+        curr_val = effective_cure(sid)
+        comp_ov  = st.session_state.cure_component_overrides.get(sid, {})
+        cure_rows.append({
+            "Store": sid,
+            "Market": mkt,
+            "Landlord": CURE_LANDLORD.get(sid,""),
+            "Rent": comp_ov.get("rent", CURE_RENT.get(sid,0)),
+            "Tax": comp_ov.get("tax", CURE_TAX.get(sid,0)),
+            "R&A Pre": comp_ov.get("ra_pre", CURE_RA_PRE.get(sid,0)),
+            "R&A Post": comp_ov.get("ra_post", CURE_RA_POST.get(sid,0)),
+            "Total Cure ($)": curr_val,
+            "Override?": curr_val != base_val,
+        })
 
     df_cure_edit = pd.DataFrame(cure_rows)
 
@@ -926,45 +950,94 @@ with tab_curecosts:
         df_cure_edit,
         use_container_width=True,
         hide_index=True,
-        disabled=["Store","Market","Base Cure ($)","Override?"],
+        disabled=["Store","Market","Landlord","Rent","Tax","R&A Pre","R&A Post","Override?"],
         column_config={
-            "Store":            st.column_config.NumberColumn(width="small"),
-            "Market":           st.column_config.TextColumn(width="medium"),
-            "Base Cure ($)":    st.column_config.NumberColumn(format="$%d", width="medium"),
-            "Current Cure ($)": st.column_config.NumberColumn(format="$%d", width="medium",
-                                                                help="Edit this value to override"),
-            "Override?":        st.column_config.CheckboxColumn(width="small"),
+            "Store":          st.column_config.NumberColumn(width="small"),
+            "Market":         st.column_config.TextColumn(width="small"),
+            "Landlord":       st.column_config.TextColumn(width="medium"),
+            "Rent":           st.column_config.NumberColumn(format="$%d", width="small"),
+            "Tax":            st.column_config.NumberColumn(format="$%d", width="small"),
+            "R&A Pre":        st.column_config.NumberColumn(format="$%d", width="small"),
+            "R&A Post":       st.column_config.NumberColumn(format="$%d", width="small"),
+            "Total Cure ($)": st.column_config.NumberColumn(format="$%d", width="medium",
+                                                             help="Edit for a quick total override"),
+            "Override?":      st.column_config.CheckboxColumn(width="small"),
         },
-        key="cure_cost_editor",
-        height=600,
+        key=f"cure_cost_editor_{mkt_filter}",
+        height=500,
     )
 
-    # Detect changes and write back to session state
-    new_overrides = {}
+    # Detect total-column edits → write to cure_overrides (component breakdown unaffected)
+    new_overrides = dict(st.session_state.cure_overrides)
+    changed = False
     for _, row in edited_cure.iterrows():
         sid = int(row["Store"])
-        new_val = row["Current Cure ($)"]
+        new_val = row["Total Cure ($)"]
         base_val = CURE.get(sid, 0)
-        if new_val != base_val:
-            new_overrides[sid] = new_val
+        comp_total = row["Rent"]+row["Tax"]+row["R&A Pre"]+row["R&A Post"]
+        if new_val != comp_total:
+            # User edited the total directly — store as override
+            if new_val != base_val:
+                if new_overrides.get(sid) != new_val:
+                    new_overrides[sid] = new_val; changed = True
+            elif sid in new_overrides:
+                del new_overrides[sid]; changed = True
 
-    if new_overrides != {int(k): v for k,v in st.session_state.cure_overrides.items()}:
+    if changed:
         st.session_state.cure_overrides = new_overrides
-        st.session_state.result = None  # invalidate stale optimization results
+        st.session_state.result = None
         st.rerun()
+
+    # ── Component drill-down editor ───────────────────────────────────────────
+    st.divider()
+    st.markdown("#### Component drill-down — edit Rent / Tax / R&A by store")
+    sel_store = st.selectbox("Select store to edit components", filter_stores,
+                              format_func=lambda s: f"{s} — {STORE_MKT.get(s,'')} — {CURE_LANDLORD.get(s,'')}",
+                              key="cure_drill_store")
+
+    comp_ov = st.session_state.cure_component_overrides.get(sel_store, {})
+    cd1,cd2,cd3,cd4 = st.columns(4)
+    with cd1: new_rent = st.number_input("Rent due", value=float(comp_ov.get("rent", CURE_RENT.get(sel_store,0))), step=100.0, key="cd_rent")
+    with cd2: new_tax  = st.number_input("Property tax", value=float(comp_ov.get("tax", CURE_TAX.get(sel_store,0))), step=100.0, key="cd_tax")
+    with cd3: new_pre  = st.number_input("Pre-petition R&A", value=float(comp_ov.get("ra_pre", CURE_RA_PRE.get(sel_store,0))), step=100.0, key="cd_rapre")
+    with cd4: new_post = st.number_input("Post-petition R&A", value=float(comp_ov.get("ra_post", CURE_RA_POST.get(sel_store,0))), step=100.0, key="cd_rapost")
+
+    new_total = new_rent + new_tax + new_pre + new_post
+    st.caption(f"New total for store {sel_store}: **{fmt(new_total)}**  (was {fmt(effective_cure(sel_store))})")
+
+    bc1, bc2 = st.columns([1,1])
+    with bc1:
+        if st.button("Apply component changes", type="primary", use_container_width=True):
+            st.session_state.cure_component_overrides[sel_store] = {
+                "rent": new_rent, "tax": new_tax, "ra_pre": new_pre, "ra_post": new_post
+            }
+            st.session_state.cure_overrides[sel_store] = new_total
+            st.session_state.result = None
+            st.rerun()
+    with bc2:
+        if st.button("Revert this store to base", use_container_width=True):
+            st.session_state.cure_component_overrides.pop(sel_store, None)
+            st.session_state.cure_overrides.pop(sel_store, None)
+            st.session_state.cure_overrides.pop(str(sel_store), None)
+            st.session_state.result = None
+            st.rerun()
 
     # Summary
     st.divider()
     tot_base = sum(CURE.values())
     tot_curr = sum(effective_cure(s) for s in ALL_STORES)
-    sc1, sc2, sc3 = st.columns(3)
+    sc1, sc2, sc3, sc4 = st.columns(4)
     sc1.metric("Base portfolio cure", fmt(tot_base))
     sc2.metric("Current portfolio cure", fmt(tot_curr))
     sc3.metric("Net change", fmt(tot_curr - tot_base),
                delta=fmt(tot_curr - tot_base),
                delta_color="inverse" if tot_curr > tot_base else "normal")
-    if st.session_state.cure_overrides:
-        st.caption(f"🔄 {len(st.session_state.cure_overrides)} store(s) have overridden cure values")
+    sc4.metric("Stores w/ overrides", len(st.session_state.cure_overrides))
+
+    st.caption(f"Base component totals — Rent: {fmt(sum(CURE_RENT.values()))} · "
+               f"Tax: {fmt(sum(CURE_TAX.values()))} · "
+               f"R&A Pre: {fmt(sum(CURE_RA_PRE.values()))} · "
+               f"R&A Post: {fmt(sum(CURE_RA_POST.values()))}")
 
 # ══════════════════════════════════════════════════════════════════════════════
 # SCENARIOS TAB
