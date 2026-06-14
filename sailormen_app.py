@@ -904,17 +904,23 @@ with tab_curecosts:
                "Click any cell in Rent / Tax / R&A Pre / R&A Post to edit — Total recalculates automatically. "
                "Copy/paste from Excel works (select a range, paste). Changes apply immediately to all tabs.")
 
-    rc1, rc2, rc3, rc4, rc5 = st.columns([1.5,1.3,1.3,1.3,1.6])
+    rc0, rc1, rc2, rc3, rc4, rc5 = st.columns([1.3,1.3,1.3,1.3,1.3,1.6])
+    with rc0:
+        mkt_filter = st.selectbox("Market", ["All markets"] + list(MARKET_STORES.keys()),
+                                  key="cure_mkt_filter")
     with rc1:
+        store_filter = st.text_input("Store # (optional)", placeholder="e.g. 128",
+                                     key="cure_store_filter")
+    with rc2:
         sort_by = st.selectbox("Sort by", ["Store #", "Market", "Landlord",
                                             "Rent", "Tax", "R&A Pre", "R&A Post", "Total Cure"],
                                key="cure_sort_by")
-    with rc2:
+    with rc3:
         if st.button("Reset all to base", use_container_width=True):
             st.session_state.cure_overrides = {}
             st.session_state.cure_component_overrides = {}
             st.rerun()
-    with rc3:
+    with rc4:
         cure_export = json.dumps({str(k):v for k,v in
                                    {s: effective_cure(s) for s in ALL_STORES}.items()})
         st.download_button("Export to JSON", data=cure_export,
@@ -963,12 +969,29 @@ with tab_curecosts:
 
     df_cure = pd.DataFrame(cure_rows)
 
+    # Filter by market
+    if mkt_filter != "All markets":
+        df_cure = df_cure[df_cure["Market"] == mkt_filter]
+
+    # Filter by store number (supports partial match / comma-separated list)
+    if store_filter.strip():
+        try:
+            wanted = {int(x.strip()) for x in store_filter.split(",") if x.strip().isdigit()}
+            if wanted:
+                df_cure = df_cure[df_cure["Store"].isin(wanted)]
+        except Exception:
+            pass
+
+    # Sort
     sort_map = {"Store #": "Store", "Market": "Market", "Landlord": "Landlord",
                 "Rent": "Rent", "Tax": "Tax", "R&A Pre": "R&A Pre",
                 "R&A Post": "R&A Post", "Total Cure": "Total Cure"}
     sort_col = sort_map.get(sort_by, "Store")
     ascending = sort_col in ("Store","Market","Landlord")
     df_cure = df_cure.sort_values(sort_col, ascending=ascending).reset_index(drop=True)
+
+    if df_cure.empty:
+        st.warning("No stores match the current filter.")
 
     edited = st.data_editor(
         df_cure,
