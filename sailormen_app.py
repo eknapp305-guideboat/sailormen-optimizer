@@ -92,6 +92,7 @@ if "show_add"       not in st.session_state: st.session_state.show_add       = F
 if "scenarios"      not in st.session_state: st.session_state.scenarios      = []
 if "cure_overrides" not in st.session_state: st.session_state.cure_overrides = {}
 if "cure_component_overrides" not in st.session_state: st.session_state.cure_component_overrides = {}
+if "cure_undo_stack" not in st.session_state: st.session_state.cure_undo_stack = []
 if "cure_editor_version" not in st.session_state: st.session_state.cure_editor_version = 0
 
 # ── Helpers ────────────────────────────────────────────────────────────────────
@@ -928,13 +929,23 @@ with tab_curecosts:
                                             "Rent", "Tax", "R&A Pre", "R&A Post", "Total Cure"],
                                key="cure_sort_by")
     with rc3:
-        if st.button("Reset all to base", use_container_width=True):
-            st.session_state.cure_overrides = {}
-            st.session_state.cure_component_overrides = {}
-            st.session_state.cure_editor_version += 1
-            for m in MARKET_STORES:
-                st.session_state[f"cure_mkt_cb_{m}"] = False
-            st.rerun()
+        if st.button("Undo last edit", use_container_width=True,
+                     disabled=not st.session_state.get("cure_undo_stack")):
+            if st.session_state.get("cure_undo_stack"):
+                last = st.session_state.cure_undo_stack.pop()
+                sid = last["store"]
+                if last["prev_components"] is None:
+                    st.session_state.cure_component_overrides.pop(sid, None)
+                else:
+                    st.session_state.cure_component_overrides[sid] = last["prev_components"]
+                if last["prev_total"] is None:
+                    st.session_state.cure_overrides.pop(sid, None)
+                    st.session_state.cure_overrides.pop(str(sid), None)
+                else:
+                    st.session_state.cure_overrides[sid] = last["prev_total"]
+                st.session_state.cure_editor_version += 1
+                st.session_state.result = None
+                st.rerun()
     with rc4:
         cure_export = json.dumps({str(k):v for k,v in
                                    {s: effective_cure(s) for s in ALL_STORES}.items()})
@@ -1032,11 +1043,27 @@ with tab_curecosts:
             new_total = rent+tax+rapre+rapost
             existing = st.session_state.cure_component_overrides.get(sid,{})
             if existing.get("rent")!=rent or existing.get("tax")!=tax or existing.get("ra_pre")!=rapre or existing.get("ra_post")!=rapost:
+                # Save undo snapshot of prior state before applying change
+                st.session_state.cure_undo_stack.append({
+                    "store": sid,
+                    "prev_components": dict(existing) if existing else None,
+                    "prev_total": st.session_state.cure_overrides.get(sid, st.session_state.cure_overrides.get(str(sid))),
+                })
+                if len(st.session_state.cure_undo_stack) > 50:
+                    st.session_state.cure_undo_stack.pop(0)
                 st.session_state.cure_component_overrides[sid] = {"rent":rent,"tax":tax,"ra_pre":rapre,"ra_post":rapost}
                 st.session_state.cure_overrides[sid] = new_total
                 changed = True
         else:
             if sid in st.session_state.cure_component_overrides:
+                existing = st.session_state.cure_component_overrides.get(sid,{})
+                st.session_state.cure_undo_stack.append({
+                    "store": sid,
+                    "prev_components": dict(existing) if existing else None,
+                    "prev_total": st.session_state.cure_overrides.get(sid, st.session_state.cure_overrides.get(str(sid))),
+                })
+                if len(st.session_state.cure_undo_stack) > 50:
+                    st.session_state.cure_undo_stack.pop(0)
                 del st.session_state.cure_component_overrides[sid]
                 st.session_state.cure_overrides.pop(sid, None)
                 st.session_state.cure_overrides.pop(str(sid), None)
