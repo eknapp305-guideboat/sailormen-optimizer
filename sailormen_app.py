@@ -328,16 +328,20 @@ def _handle_upload():
             if isinstance(data, list):
                 imported = data
                 cure_overrides = {}
+                cure_component_overrides = {}
             elif isinstance(data, dict):
                 imported       = data.get("bids", [])
                 cure_overrides = {int(k): v for k,v in data.get("cure_overrides", {}).items()}
+                cure_component_overrides = {int(k): v for k,v in data.get("cure_component_overrides", {}).items()}
             else:
                 st.session_state._import_error = "Invalid JSON format"
                 return
             for b in imported:
                 if "id" not in b: b["id"] = str(uuid.uuid4())[:8]
-            st.session_state.bids           = imported
-            st.session_state.cure_overrides = cure_overrides
+            st.session_state.bids                     = imported
+            st.session_state.cure_overrides           = cure_overrides
+            st.session_state.cure_component_overrides = cure_component_overrides
+            st.session_state.cure_editor_version      += 1
             st.session_state.result         = None
             st.session_state.edit_id        = None
             st.session_state._import_error  = None
@@ -947,11 +951,19 @@ with tab_curecosts:
                 st.session_state.result = None
                 st.rerun()
     with rc4:
-        cure_export = json.dumps({str(k):v for k,v in
-                                   {s: effective_cure(s) for s in ALL_STORES}.items()})
+        cure_export_payload = {
+            "bids": st.session_state.bids,
+            "cure_overrides": {str(k): v for k,v in
+                {s: effective_cure(s) for s in ALL_STORES}.items()},
+            "cure_component_overrides": {
+                str(k): v for k,v in st.session_state.cure_component_overrides.items()
+            },
+        }
+        cure_export = json.dumps(cure_export_payload, indent=2)
         st.download_button("Export to JSON", data=cure_export,
-                           file_name="cure_schedule.json", mime="application/json",
-                           use_container_width=True)
+                           file_name="sailormen_bids_with_cure.json", mime="application/json",
+                           use_container_width=True,
+                           help="Includes current bids + full cure schedule + component overrides — re-upload via Import bids to restore everything")
     with rc5:
         # Excel-style CSV export
         csv_rows = []
