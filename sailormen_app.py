@@ -899,145 +899,131 @@ with tab_cure:
 # CURE COSTS TAB — live editable cure schedule with component breakdown
 # ══════════════════════════════════════════════════════════════════════════════
 with tab_curecosts:
-    st.markdown("#### Cure Cost Schedule — editable")
+    st.markdown("#### Cure Cost Schedule")
     st.caption("Estimated Cure Costs = Rent Due + Property Taxes + Pre-Petition R&A + Post-Petition R&A. "
-               "Edit the Total column directly for a quick override, or expand a market below to edit "
-               "individual components — the total recalculates automatically. Changes apply immediately "
-               "across all tabs without needing a file upload.")
+               "Click any cell in Rent / Tax / R&A Pre / R&A Post to edit — Total recalculates automatically. "
+               "Copy/paste from Excel works (select a range, paste). Changes apply immediately to all tabs.")
 
-    rc1, rc2, rc3 = st.columns([1.5,1.5,5])
+    rc1, rc2, rc3, rc4 = st.columns([1.3,1.3,1.3,3])
     with rc1:
-        if st.button("Reset to base schedule", use_container_width=True):
+        if st.button("Reset all to base", use_container_width=True):
             st.session_state.cure_overrides = {}
             st.session_state.cure_component_overrides = {}
             st.rerun()
     with rc2:
         cure_export = json.dumps({str(k):v for k,v in
                                    {s: effective_cure(s) for s in ALL_STORES}.items()})
-        st.download_button("Export cure schedule", data=cure_export,
+        st.download_button("Export to JSON", data=cure_export,
                            file_name="cure_schedule.json", mime="application/json",
                            use_container_width=True)
+    with rc3:
+        # Excel-style CSV export
+        csv_rows = []
+        for mkt, stores in MARKET_STORES.items():
+            for sid in stores:
+                comp_ov = st.session_state.cure_component_overrides.get(sid, {})
+                csv_rows.append({
+                    "Store": sid, "Market": mkt, "Landlord": CURE_LANDLORD.get(sid,""),
+                    "Rent": comp_ov.get("rent", CURE_RENT.get(sid,0)),
+                    "Tax": comp_ov.get("tax", CURE_TAX.get(sid,0)),
+                    "R&A Pre": comp_ov.get("ra_pre", CURE_RA_PRE.get(sid,0)),
+                    "R&A Post": comp_ov.get("ra_post", CURE_RA_POST.get(sid,0)),
+                    "Total Cure": effective_cure(sid),
+                })
+        csv_data = pd.DataFrame(csv_rows).to_csv(index=False)
+        st.download_button("Export to CSV", data=csv_data, file_name="cure_schedule.csv",
+                           mime="text/csv", use_container_width=True)
 
     if "cure_component_overrides" not in st.session_state:
         st.session_state.cure_component_overrides = {}
 
-    # ── Quick-edit: Total only, one row per store, filterable by market ──────
-    mkt_filter = st.selectbox("Filter by market", ["All markets"] + list(MARKET_STORES.keys()),
-                              key="cure_mkt_filter")
-    filter_stores = ALL_STORES if mkt_filter == "All markets" else MARKET_STORES[mkt_filter]
-
+    # ── Full 119-row spreadsheet-style table ───────────────────────────────────
     cure_rows = []
-    for sid in filter_stores:
-        mkt = STORE_MKT.get(sid,"")
-        base_val = CURE.get(sid, 0)
-        curr_val = effective_cure(sid)
-        comp_ov  = st.session_state.cure_component_overrides.get(sid, {})
-        cure_rows.append({
-            "Store": sid,
-            "Market": mkt,
-            "Landlord": CURE_LANDLORD.get(sid,""),
-            "Rent": comp_ov.get("rent", CURE_RENT.get(sid,0)),
-            "Tax": comp_ov.get("tax", CURE_TAX.get(sid,0)),
-            "R&A Pre": comp_ov.get("ra_pre", CURE_RA_PRE.get(sid,0)),
-            "R&A Post": comp_ov.get("ra_post", CURE_RA_POST.get(sid,0)),
-            "Total Cure ($)": curr_val,
-            "Override?": curr_val != base_val,
-        })
+    for mkt, stores in MARKET_STORES.items():
+        for sid in stores:
+            comp_ov = st.session_state.cure_component_overrides.get(sid, {})
+            rent  = comp_ov.get("rent",   CURE_RENT.get(sid,0))
+            tax   = comp_ov.get("tax",    CURE_TAX.get(sid,0))
+            rapre = comp_ov.get("ra_pre", CURE_RA_PRE.get(sid,0))
+            rapost= comp_ov.get("ra_post",CURE_RA_POST.get(sid,0))
+            cure_rows.append({
+                "Store": sid,
+                "Market": mkt,
+                "Landlord": CURE_LANDLORD.get(sid,""),
+                "Rent": rent,
+                "Tax": tax,
+                "R&A Pre": rapre,
+                "R&A Post": rapost,
+                "Total Cure": rent+tax+rapre+rapost,
+            })
 
-    df_cure_edit = pd.DataFrame(cure_rows)
+    df_cure = pd.DataFrame(cure_rows)
 
-    edited_cure = st.data_editor(
-        df_cure_edit,
+    edited = st.data_editor(
+        df_cure,
         use_container_width=True,
         hide_index=True,
-        disabled=["Store","Market","Landlord","Rent","Tax","R&A Pre","R&A Post","Override?"],
+        disabled=["Store","Market","Landlord","Total Cure"],
         column_config={
-            "Store":          st.column_config.NumberColumn(width="small"),
-            "Market":         st.column_config.TextColumn(width="small"),
-            "Landlord":       st.column_config.TextColumn(width="medium"),
-            "Rent":           st.column_config.NumberColumn(format="$%d", width="small"),
-            "Tax":            st.column_config.NumberColumn(format="$%d", width="small"),
-            "R&A Pre":        st.column_config.NumberColumn(format="$%d", width="small"),
-            "R&A Post":       st.column_config.NumberColumn(format="$%d", width="small"),
-            "Total Cure ($)": st.column_config.NumberColumn(format="$%d", width="medium",
-                                                             help="Edit for a quick total override"),
-            "Override?":      st.column_config.CheckboxColumn(width="small"),
+            "Store":      st.column_config.NumberColumn(width="small", pinned=True),
+            "Market":     st.column_config.TextColumn(width="small"),
+            "Landlord":   st.column_config.TextColumn(width="large"),
+            "Rent":       st.column_config.NumberColumn(format="$%d", width="small", step=100),
+            "Tax":        st.column_config.NumberColumn(format="$%d", width="small", step=100),
+            "R&A Pre":    st.column_config.NumberColumn(format="$%d", width="small", step=100),
+            "R&A Post":   st.column_config.NumberColumn(format="$%d", width="small", step=100),
+            "Total Cure": st.column_config.NumberColumn(format="$%d", width="medium"),
         },
-        key=f"cure_cost_editor_{mkt_filter}",
-        height=500,
+        key="cure_full_editor",
+        height=560,
     )
 
-    # Detect total-column edits → write to cure_overrides (component breakdown unaffected)
-    new_overrides = dict(st.session_state.cure_overrides)
+    # Recompute Total Cure from edited components, detect changes
     changed = False
-    for _, row in edited_cure.iterrows():
+    for idx, row in edited.iterrows():
         sid = int(row["Store"])
-        new_val = row["Total Cure ($)"]
-        base_val = CURE.get(sid, 0)
-        comp_total = row["Rent"]+row["Tax"]+row["R&A Pre"]+row["R&A Post"]
-        if new_val != comp_total:
-            # User edited the total directly — store as override
-            if new_val != base_val:
-                if new_overrides.get(sid) != new_val:
-                    new_overrides[sid] = new_val; changed = True
-            elif sid in new_overrides:
-                del new_overrides[sid]; changed = True
+        rent, tax, rapre, rapost = row["Rent"], row["Tax"], row["R&A Pre"], row["R&A Post"]
+        base_rent  = CURE_RENT.get(sid,0)
+        base_tax   = CURE_TAX.get(sid,0)
+        base_rapre = CURE_RA_PRE.get(sid,0)
+        base_rapost= CURE_RA_POST.get(sid,0)
+        if (rent,tax,rapre,rapost) != (base_rent,base_tax,base_rapre,base_rapost):
+            new_total = rent+tax+rapre+rapost
+            existing = st.session_state.cure_component_overrides.get(sid,{})
+            if existing.get("rent")!=rent or existing.get("tax")!=tax or existing.get("ra_pre")!=rapre or existing.get("ra_post")!=rapost:
+                st.session_state.cure_component_overrides[sid] = {"rent":rent,"tax":tax,"ra_pre":rapre,"ra_post":rapost}
+                st.session_state.cure_overrides[sid] = new_total
+                changed = True
+        else:
+            if sid in st.session_state.cure_component_overrides:
+                del st.session_state.cure_component_overrides[sid]
+                st.session_state.cure_overrides.pop(sid, None)
+                st.session_state.cure_overrides.pop(str(sid), None)
+                changed = True
 
     if changed:
-        st.session_state.cure_overrides = new_overrides
         st.session_state.result = None
         st.rerun()
 
-    # ── Component drill-down editor ───────────────────────────────────────────
-    st.divider()
-    st.markdown("#### Component drill-down — edit Rent / Tax / R&A by store")
-    sel_store = st.selectbox("Select store to edit components", filter_stores,
-                              format_func=lambda s: f"{s} — {STORE_MKT.get(s,'')} — {CURE_LANDLORD.get(s,'')}",
-                              key="cure_drill_store")
-
-    comp_ov = st.session_state.cure_component_overrides.get(sel_store, {})
-    cd1,cd2,cd3,cd4 = st.columns(4)
-    with cd1: new_rent = st.number_input("Rent due", value=float(comp_ov.get("rent", CURE_RENT.get(sel_store,0))), step=100.0, key="cd_rent")
-    with cd2: new_tax  = st.number_input("Property tax", value=float(comp_ov.get("tax", CURE_TAX.get(sel_store,0))), step=100.0, key="cd_tax")
-    with cd3: new_pre  = st.number_input("Pre-petition R&A", value=float(comp_ov.get("ra_pre", CURE_RA_PRE.get(sel_store,0))), step=100.0, key="cd_rapre")
-    with cd4: new_post = st.number_input("Post-petition R&A", value=float(comp_ov.get("ra_post", CURE_RA_POST.get(sel_store,0))), step=100.0, key="cd_rapost")
-
-    new_total = new_rent + new_tax + new_pre + new_post
-    st.caption(f"New total for store {sel_store}: **{fmt(new_total)}**  (was {fmt(effective_cure(sel_store))})")
-
-    bc1, bc2 = st.columns([1,1])
-    with bc1:
-        if st.button("Apply component changes", type="primary", use_container_width=True):
-            st.session_state.cure_component_overrides[sel_store] = {
-                "rent": new_rent, "tax": new_tax, "ra_pre": new_pre, "ra_post": new_post
-            }
-            st.session_state.cure_overrides[sel_store] = new_total
-            st.session_state.result = None
-            st.rerun()
-    with bc2:
-        if st.button("Revert this store to base", use_container_width=True):
-            st.session_state.cure_component_overrides.pop(sel_store, None)
-            st.session_state.cure_overrides.pop(sel_store, None)
-            st.session_state.cure_overrides.pop(str(sel_store), None)
-            st.session_state.result = None
-            st.rerun()
-
-    # Summary
-    st.divider()
+    # ── Bottom summary row, like an Excel totals row ──────────────────────────
+    st.markdown("---")
+    tot_rent  = sum(r["Rent"] for r in cure_rows) if not changed else None
+    df_disp = edited
+    tr1,tr2,tr3,tr4,tr5,tr6 = st.columns(6)
+    tr1.metric("Total Rent",     fmt(df_disp["Rent"].sum()))
+    tr2.metric("Total Tax",      fmt(df_disp["Tax"].sum()))
+    tr3.metric("Total R&A Pre",  fmt(df_disp["R&A Pre"].sum()))
+    tr4.metric("Total R&A Post", fmt(df_disp["R&A Post"].sum()))
+    tot_curr = df_disp["Total Cure"].sum() if "Total Cure" in df_disp else sum(effective_cure(s) for s in ALL_STORES)
     tot_base = sum(CURE.values())
-    tot_curr = sum(effective_cure(s) for s in ALL_STORES)
-    sc1, sc2, sc3, sc4 = st.columns(4)
-    sc1.metric("Base portfolio cure", fmt(tot_base))
-    sc2.metric("Current portfolio cure", fmt(tot_curr))
-    sc3.metric("Net change", fmt(tot_curr - tot_base),
+    tr5.metric("Portfolio Total Cure", fmt(tot_curr))
+    tr6.metric("vs. Base", fmt(tot_curr - tot_base),
                delta=fmt(tot_curr - tot_base),
                delta_color="inverse" if tot_curr > tot_base else "normal")
-    sc4.metric("Stores w/ overrides", len(st.session_state.cure_overrides))
 
-    st.caption(f"Base component totals — Rent: {fmt(sum(CURE_RENT.values()))} · "
-               f"Tax: {fmt(sum(CURE_TAX.values()))} · "
-               f"R&A Pre: {fmt(sum(CURE_RA_PRE.values()))} · "
-               f"R&A Post: {fmt(sum(CURE_RA_POST.values()))}")
+    if st.session_state.cure_overrides:
+        st.caption(f"🔄 {len(st.session_state.cure_overrides)} store(s) overridden from base schedule")
+
 
 # ══════════════════════════════════════════════════════════════════════════════
 # SCENARIOS TAB
