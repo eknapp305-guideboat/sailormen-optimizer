@@ -907,10 +907,10 @@ with tab_curecosts:
 
     rc0, rc1, rc2, rc3, rc4, rc5 = st.columns([1.3,1.3,1.3,1.3,1.3,1.6])
     with rc0:
-        mkt_filter = st.selectbox("Market", ["All markets"] + list(MARKET_STORES.keys()),
-                                  key="cure_mkt_filter")
+        mkt_filter = st.multiselect("Markets", list(MARKET_STORES.keys()),
+                                    placeholder="All markets", key="cure_mkt_filter")
     with rc1:
-        store_filter = st.text_input("Store # (optional)", placeholder="e.g. 128",
+        store_filter = st.text_input("Store #s (optional)", placeholder="e.g. 128, 129",
                                      key="cure_store_filter")
     with rc2:
         sort_by = st.selectbox("Sort by", ["Store #", "Market", "Landlord",
@@ -971,11 +971,11 @@ with tab_curecosts:
 
     df_cure = pd.DataFrame(cure_rows)
 
-    # Filter by market
-    if mkt_filter != "All markets":
-        df_cure = df_cure[df_cure["Market"] == mkt_filter]
+    # Filter by market(s) — empty selection means all markets
+    if mkt_filter:
+        df_cure = df_cure[df_cure["Market"].isin(mkt_filter)]
 
-    # Filter by store number (supports partial match / comma-separated list)
+    # Filter by store number(s) — comma-separated list
     if store_filter.strip():
         try:
             wanted = {int(x.strip()) for x in store_filter.split(",") if x.strip().isdigit()}
@@ -1042,23 +1042,36 @@ with tab_curecosts:
         # No st.rerun() here — avoids re-sorting/jumping the table mid-edit.
         # Values are picked up on the next natural rerun (tab switch, button click, etc.)
 
-    # ── Bottom summary row, like an Excel totals row ──────────────────────────
+    # ── Bottom summary row, reflects current filter ───────────────────────────
     st.markdown("---")
     df_disp = edited
+
+    filtered_store_ids = set(df_disp["Store"].tolist())
+    base_total_filtered = sum(CURE.get(s,0) for s in filtered_store_ids)
+
+    n_label = f"{len(filtered_store_ids)} store" + ("s" if len(filtered_store_ids)!=1 else "")
+    filter_desc = []
+    if mkt_filter: filter_desc.append(", ".join(mkt_filter))
+    if store_filter.strip(): filter_desc.append(f"stores {store_filter.strip()}")
+    scope_label = " · ".join(filter_desc) if filter_desc else "All 119 stores"
+    st.caption(f"Showing: {scope_label} ({n_label})")
+
     tr1,tr2,tr3,tr4,tr5,tr6 = st.columns(6)
     tr1.metric("Total Rent",     fmt(df_disp["Rent"].sum()))
     tr2.metric("Total Tax",      fmt(df_disp["Tax"].sum()))
     tr3.metric("Total R&A Pre",  fmt(df_disp["R&A Pre"].sum()))
     tr4.metric("Total R&A Post", fmt(df_disp["R&A Post"].sum()))
-    tot_curr = df_disp["Total Cure"].sum() if "Total Cure" in df_disp else sum(effective_cure(s) for s in ALL_STORES)
-    tot_base = sum(CURE.values())
-    tr5.metric("Portfolio Total Cure", fmt(tot_curr))
-    tr6.metric("vs. Base", fmt(tot_curr - tot_base),
-               delta=fmt(tot_curr - tot_base),
-               delta_color="inverse" if tot_curr > tot_base else "normal")
+    tot_curr = df_disp["Total Cure"].sum()
+    tr5.metric("Total Cure (filtered)", fmt(tot_curr))
+    tr6.metric("vs. Base (filtered)", fmt(tot_curr - base_total_filtered),
+               delta=fmt(tot_curr - base_total_filtered),
+               delta_color="inverse" if tot_curr > base_total_filtered else "normal")
 
     if st.session_state.cure_overrides:
-        st.caption(f"🔄 {len(st.session_state.cure_overrides)} store(s) overridden from base schedule")
+        n_overridden_in_view = sum(1 for s in filtered_store_ids if s in st.session_state.cure_overrides
+                                   or str(s) in st.session_state.cure_overrides)
+        st.caption(f"🔄 {len(st.session_state.cure_overrides)} store(s) overridden from base schedule portfolio-wide"
+                   + (f" · {n_overridden_in_view} in current view" if filter_desc else ""))
 
 
 # ══════════════════════════════════════════════════════════════════════════════
